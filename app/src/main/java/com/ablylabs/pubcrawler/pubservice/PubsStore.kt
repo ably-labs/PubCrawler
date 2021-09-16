@@ -6,13 +6,24 @@ import com.ablylabs.pubcrawler.pubservice.geo.GeolocationTree
 import com.google.gson.Gson
 import com.google.gson.stream.JsonReader
 import java.io.InputStream
+import java.lang.Error
 
 //create pubs reading inputstream
 class PubsStore (private val locationTree: GeolocationTree,
                  private val inputStream: InputStream) {
 
-    fun findNearbyPoints(latitude:Double,longitude:Double,maxPoints:Int) {
-
+    fun findNearbyPubs(latitude:Double, longitude:Double, maxPoints:Int) : NearestPubsResult{
+        val nearest = locationTree.nearest(GeoPoint(Geolocation(latitude, longitude), null), 2)
+        nearest?.let {
+            if (it.toList().isEmpty()){
+                return NearestPubsResult.NoPubs
+            }else{
+                //this is not very nice, the whole structure should be generified later
+                return NearestPubsResult.PubsFound(it.toList().map { it.associatedLocation as Pub })
+            }
+        } ?: kotlin.run{
+            return NearestPubsResult.Error("Some sort of error hapened")
+        }
     }
 
     //data initialisation, add all pubs into tree
@@ -27,5 +38,11 @@ class PubsStore (private val locationTree: GeolocationTree,
             locationTree.insert(GeoPoint(Geolocation(pub.latitude,pub.longitude),pub))
         }
         jsonReader.close()
+    }
+
+    sealed class NearestPubsResult{
+        data class PubsFound(val pubs:List<Pub>):NearestPubsResult()
+        object NoPubs:NearestPubsResult()
+        data class Error(val errorMessage:String?):NearestPubsResult()
     }
 }

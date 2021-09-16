@@ -11,9 +11,19 @@ class PubCrawlerApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        pubsStore = PubsStore(GeolocationTree(), resources.openRawResource(R.raw.pubs))
+        val inputStream = resources.openRawResource(R.raw.pubs)
+        pubsStore = PubsStore(GeolocationTree(), inputStream)
+        val now = System.currentTimeMillis()
         pubsStore.loadData()
+        val later = System.currentTimeMillis()
+        Log.d(TAG, "Pubs load time ${later-now}ms ")
 
-        Log.d(TAG, "onCreate: ")
+        val nearestPubsResult = pubsStore.findNearbyPubs(51.454514, -2.587910, 2)
+        when(nearestPubsResult){
+            is PubsStore.NearestPubsResult.PubsFound ->
+                nearestPubsResult.pubs.forEach { Log.d(TAG, it.name) }
+            is PubsStore.NearestPubsResult.Error -> Log.d(TAG, "There was an error finding nearby pub")
+            PubsStore.NearestPubsResult.NoPubs -> Log.d(TAG, "Sorry, no pubs found here")
+        }
     }
 }
