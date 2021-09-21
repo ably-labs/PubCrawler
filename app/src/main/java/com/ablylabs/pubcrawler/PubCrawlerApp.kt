@@ -14,7 +14,7 @@ import io.ably.lib.types.Message
 
 
 class PubCrawlerApp : Application() {
-    /*  AblyRealtime ably = new AblyRealtime("NLYSHA.zPeslg:0aBbLE54Dsylr0qW");
+    /*
       Channel channel = ably.channels.get("test");
 
       channel.publish("greeting", "hello");*/
@@ -26,33 +26,7 @@ class PubCrawlerApp : Application() {
         super.onCreate()
         val inputStream = resources.openRawResource(R.raw.pubs)
 
-        tryAbly()
     }
 
-    //use ably
-    fun tryAbly() {
-        ably = AblyRealtime("NLYSHA.zPeslg:0aBbLE54Dsylr0qW")
 
-        ably.connection.on(ConnectionStateListener { state ->
-            Log.d(TAG, "connection state changed: ${state.current.name}")
-            when (state.current) {
-                ConnectionState.connected -> {
-                    channel = ably.channels["test"]
-                    channelSubscribe()
-                    channel?.publish(Message("chat_messsage", " Hi there"))
-                }
-                ConnectionState.failed -> {
-                }
-            }
-        })
-      //  ably.connect()
-    }
-    fun channelSubscribe(){
-        channel?.subscribe("chat_message", object : Channel.MessageListener {
-            override fun onMessage(message: Message?) {
-                Log.d(TAG, "onMessage: ${message?.data}")
-            }
-
-        })
-    }
 }

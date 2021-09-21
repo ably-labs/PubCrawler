@@ -5,8 +5,8 @@ import com.ablylabs.pubcrawler.pubservice.Pub
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
-import io.ably.lib.types.Message
 
+private const val TAG = "RealtimePub"
 class RealtimePub(private val ably:AblyRealtime) {
     init {
         ably.connection.on(ConnectionStateListener { state ->
@@ -19,8 +19,8 @@ class RealtimePub(private val ably:AblyRealtime) {
             }
         })
     }
-    fun numberOfPeopleIn(pubs: List<Pub>): Map<Pub, Int> {
-        TODO()
+    fun numberOfPeopleIn(pubs: List<Pub>): List<Pair<Pub, Int>> {
+        return pubs.map { Pair(it, ably.channels[it.name].presence.get().size) }
     }
     //this one might include a callback later
     fun join(who:PubGoer, which:Pub){
@@ -63,6 +63,8 @@ class RealtimePub(private val ably:AblyRealtime) {
         TODO()
     }
     fun registerToPubUpdates(pubs:List<Pub>, update : (pubUpdate: Map<Pub, Int>)-> Unit ){
-        TODO()
+        pubs.forEach { ably.channels[it.name].presence.subscribe{
+            Log.d(TAG, "registerToPubUpdates: ")
+        } }
     }
 }

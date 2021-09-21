@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.ablylabs.pubcrawler.pubservice.Pub
 import com.ablylabs.pubcrawler.pubservice.PubsStore
 import com.ablylabs.pubcrawler.pubservice.geo.GeolocationTree
+import com.ablylabs.pubcrawler.realtime.RealtimePub
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -15,18 +16,25 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import io.ably.lib.realtime.AblyRealtime
 
 private const val TAG = "MainActivity"
+
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCameraIdleListener {
 
     private lateinit var pubsStore: PubsStore ///this should move somewhere else in production app
     private lateinit var progress: ProgressBar
     private lateinit var map: GoogleMap
-    private val markers = mutableListOf<Marker>() //reuse markers in here if not empty, should be the same count
+    private lateinit var realtimePub: RealtimePub
+    private val markers =
+        mutableListOf<Marker>() //reuse markers in here if not empty, should be the same count
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         progress = findViewById(R.id.progress)
+
+        realtimePub = RealtimePub(AblyRealtime("NLYSHA.zPeslg:0aBbLE54Dsylr0qW"))
 
         val inputStream = resources.openRawResource(R.raw.pubs)
         pubsStore = PubsStore(GeolocationTree(), inputStream)
@@ -52,14 +60,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
     }
 
     private fun drawPubMarkers(pubs: List<Pub>) {
-        if (markers.isNotEmpty()){
+        if (markers.isNotEmpty()) {
             markers.forEachIndexed { index, marker ->
                 run {
                     marker.position = LatLng(pubs[index].latitude, pubs[index].longitude)
                     marker.title = pubs[index].name
                 }
             }
-        }else{
+        } else {
             pubs.forEach {
                 val marker = map.addMarker(
                     MarkerOptions()
@@ -76,9 +84,27 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
         map.cameraPosition.target.let {
             val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 2)
             when (result) {
-                is PubsStore.NearestPubsResult.PubsFound -> drawPubMarkers(result.pubs)
+                is PubsStore.NearestPubsResult.PubsFound -> {
+                    drawPubMarkers(result.pubs)
+                    registerForPubUpdates(result.pubs)
+                    val numbers = realtimePub.numberOfPeopleIn(result.pubs)
+                    numbers.forEach {
+                        Log.d(
+                            TAG,
+                            "number of people in ${it.first.name} is ${it.second}"
+                        )
+                    }
+                }
                 is PubsStore.NearestPubsResult.Error -> TODO()
                 PubsStore.NearestPubsResult.NoPubs -> TODO()
+            }
+        }
+    }
+
+    private fun registerForPubUpdates(pubs: List<Pub>) {
+        realtimePub.registerToPubUpdates(pubs) { updates ->
+            updates.keys.forEach {
+                Log.d(TAG, "registerForPubUpdates: ${it.name} ${updates[it]}")
             }
         }
     }
