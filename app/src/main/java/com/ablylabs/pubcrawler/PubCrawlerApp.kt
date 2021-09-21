@@ -45,7 +45,7 @@ class PubCrawlerApp : Application() {
                 }
             }
         })
-        ably.connect()
+      //  ably.connect()
     }
     fun channelSubscribe(){
         channel?.subscribe("chat_message", object : Channel.MessageListener {
