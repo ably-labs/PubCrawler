@@ -21,11 +21,10 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import io.ably.lib.realtime.AblyRealtime
 import java.util.*
-import kotlin.concurrent.timerTask
 
 private const val TAG = "MainActivity"
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCameraIdleListener {
+class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCameraIdleListener,GoogleMap.OnMarkerClickListener {
 
     private lateinit var pubsStore: PubsStore ///this should move somewhere else in production app
     private lateinit var progress: ProgressBar
@@ -52,6 +51,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
     override fun onMapReady(googleMap: GoogleMap?) {
         map = googleMap!!
         map.setOnCameraIdleListener(this)
+        map.setOnMarkerClickListener(this)
 
         // Add a marker in Sydney and move the camera
         val bristol = LatLng(51.4684055, -2.7307999)
@@ -70,6 +70,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
                 run {
                     marker.position = LatLng(pubs[index].latitude, pubs[index].longitude)
                     marker.title = pubs[index].name
+                    marker.tag = pubs[index]
                 }
             }
         } else {
@@ -79,10 +80,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
                         .position(LatLng(it.latitude, it.longitude))
                         .title(it.name)
                 )
+                marker.tag = it
                 markers.add(marker)
             }
         }
-
     }
 
     override fun onCameraIdle() {
@@ -107,6 +108,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
                 PubsStore.NearestPubsResult.NoPubs -> TODO()
             }
         }
+    }
+
+    override fun onMarkerClick(marker: Marker): Boolean {
+        val pub = marker.tag as Pub
+        Toast.makeText(this, "Tapped on ${pub.name}",Toast.LENGTH_SHORT).show()
+        return true
     }
     private fun simulateJoin(pubs: List<Pub>){
         Handler().postDelayed({
