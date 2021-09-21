@@ -14,17 +14,8 @@ import io.ably.lib.types.Message
 
 
 class PubCrawlerApp : Application() {
-    /*
-      Channel channel = ably.channels.get("test");
-
-      channel.publish("greeting", "hello");*/
-    private lateinit var ably: AblyRealtime
-    private var channel: Channel? = null
-
-    private val TAG = "PubCrawlerApp"
     override fun onCreate() {
         super.onCreate()
-        val inputStream = resources.openRawResource(R.raw.pubs)
 
     }
 

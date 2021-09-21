@@ -3,8 +3,10 @@ package com.ablylabs.pubcrawler.realtime
 import android.util.Log
 import com.ablylabs.pubcrawler.pubservice.Pub
 import io.ably.lib.realtime.AblyRealtime
+import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
+import io.ably.lib.types.ErrorInfo
 
 private const val TAG = "RealtimePub"
 class RealtimePub(private val ably:AblyRealtime) {
@@ -23,8 +25,19 @@ class RealtimePub(private val ably:AblyRealtime) {
         return pubs.map { Pair(it, ably.channels[it.name].presence.get().size) }
     }
     //this one might include a callback later
-    fun join(who:PubGoer, which:Pub){
-        TODO()
+    fun join(who:PubGoer, which:Pub, joinResult : (success:Boolean) -> Unit){
+        ably.channels[which.name].presence.apply {
+                enterClient(who.name,"no_data",object :CompletionListener{
+                    override fun onSuccess() {
+                        joinResult(true)
+                    }
+
+                    override fun onError(reason: ErrorInfo?) {
+                        joinResult(false)
+                    }
+                })
+
+        }
     }
     //this one might also include a callback for later
     fun leave(who:PubGoer, which:Pub){

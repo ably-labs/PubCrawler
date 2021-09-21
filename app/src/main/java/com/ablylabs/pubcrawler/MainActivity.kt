@@ -1,13 +1,16 @@
 package com.ablylabs.pubcrawler
 
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ablylabs.pubcrawler.pubservice.Pub
 import com.ablylabs.pubcrawler.pubservice.PubsStore
 import com.ablylabs.pubcrawler.pubservice.geo.GeolocationTree
+import com.ablylabs.pubcrawler.realtime.PubGoer
 import com.ablylabs.pubcrawler.realtime.RealtimePub
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -17,6 +20,8 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import io.ably.lib.realtime.AblyRealtime
+import java.util.*
+import kotlin.concurrent.timerTask
 
 private const val TAG = "MainActivity"
 
@@ -85,20 +90,30 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
             val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 2)
             when (result) {
                 is PubsStore.NearestPubsResult.PubsFound -> {
-                    drawPubMarkers(result.pubs)
-                    registerForPubUpdates(result.pubs)
-                    val numbers = realtimePub.numberOfPeopleIn(result.pubs)
-                    numbers.forEach {
-                        Log.d(
-                            TAG,
-                            "number of people in ${it.first.name} is ${it.second}"
-                        )
+                    result.pubs.apply {
+                        drawPubMarkers(this)
+                        registerForPubUpdates(this)
+                        simulateJoin(result.pubs)
+                        val numbers = realtimePub.numberOfPeopleIn(this)
+                        numbers.forEach {
+                            Log.d(
+                                TAG,
+                                "number of people in ${it.first.name} is ${it.second}"
+                            )
+                        }
                     }
                 }
                 is PubsStore.NearestPubsResult.Error -> TODO()
                 PubsStore.NearestPubsResult.NoPubs -> TODO()
             }
         }
+    }
+    private fun simulateJoin(pubs: List<Pub>){
+        Handler().postDelayed({
+            realtimePub.join(PubGoer("Ikbal"),pubs[0]){
+                Toast.makeText(this@MainActivity,if(it)  "Joined the pub" else " Couldn't join the pub",Toast.LENGTH_SHORT).show()
+            }
+        }, 1000)
     }
 
     private fun registerForPubUpdates(pubs: List<Pub>) {
