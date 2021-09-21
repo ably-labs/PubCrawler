@@ -73,7 +73,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
     }
 
     override fun onCameraIdle() {
-        Log.d(TAG, "onCameraIdle: ")
         map.cameraPosition.target.let {
             val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 2)
             when (result) {
@@ -82,8 +81,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
                 PubsStore.NearestPubsResult.NoPubs -> TODO()
             }
         }
-
-
     }
 
 }
