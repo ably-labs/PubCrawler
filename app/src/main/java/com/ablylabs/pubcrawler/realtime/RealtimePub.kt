@@ -1,6 +1,5 @@
 package com.ablylabs.pubcrawler.realtime
 
-import android.util.Log
 import com.ablylabs.pubcrawler.pubservice.Pub
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.CompletionListener
@@ -94,7 +93,6 @@ class RealtimePub(private val ably: AblyRealtime) {
         TODO()
     }
 
-    //update function might contain a bit more things, actions
     fun registerToPubUpdates(pub: Pub, updated: (update:PubUpdate) -> Unit) {
         ably.channels[pub.name].presence.subscribe {
             when(it.action){
@@ -106,4 +104,5 @@ class RealtimePub(private val ably: AblyRealtime) {
             }
         }
     }
+    fun unRegisterFromPubUpdates(pub: Pub) =  ably.channels[pub.name].presence.unsubscribe()
 }

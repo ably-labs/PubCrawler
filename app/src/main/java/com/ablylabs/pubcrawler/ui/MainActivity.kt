@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         joinButton = findViewById(R.id.joinButton)
         val realtimePub = PubCrawlerApp.instance().realtimePub
         joinButton.setOnClickListener {
-            checkName(this){name->
+            checkName(this) { name ->
                 realtimePub.join(PubGoer(name), selectedPub) {
                     Intent(this, PubActivity::class.java).apply {
                         putExtra(PubActivity.EXTRA_PUB_JSON, Gson().toJson(selectedPub))
@@ -66,6 +66,29 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         }
 
         bottomSheetBehaviour = BottomSheetBehavior.from(findViewById(R.id.infobox))
+        bottomSheetBehaviour.addBottomSheetCallback(object :
+            BottomSheetBehavior.BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                when (newState) {
+                    BottomSheetBehavior.STATE_EXPANDED -> {
+                        //also register for updates
+                        realtimePub.registerToPubUpdates(selectedPub) {
+                            numberOfPeopleTextView.text =
+                                "${realtimePub.numberOfPeopleInPub(selectedPub)} people here"
+                        }
+                    }
+                    BottomSheetBehavior.STATE_COLLAPSED -> {
+                        realtimePub.unRegisterFromPubUpdates(selectedPub)
+                    }
+                }
+            }
+
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+
+            }
+        })
+
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
@@ -147,11 +170,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         pubAddressView.text = pub.address
         numberOfPeopleTextView.text = "${realtimePub.numberOfPeopleInPub(pub)} people here"
         bottomSheetBehaviour.state = BottomSheetBehavior.STATE_EXPANDED
-
-        //also register for updates
-        realtimePub.registerToPubUpdates(pub) {
-            numberOfPeopleTextView.text = "${realtimePub.numberOfPeopleInPub(pub)} people here"
-        }
     }
 
     private fun hideInfo() {
