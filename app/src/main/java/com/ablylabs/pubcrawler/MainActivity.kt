@@ -31,10 +31,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
     GoogleMap.OnCameraIdleListener, GoogleMap.OnMarkerClickListener {
 
     private lateinit var bottomSheetBehaviour: BottomSheetBehavior<FrameLayout>
-    private lateinit var pubsStore: PubsStore ///this should move somewhere else in production app
     private lateinit var progress: ProgressBar
     private lateinit var map: GoogleMap
-    private lateinit var realtimePub: RealtimePub
     private lateinit var pubNameTextView: TextView
     private lateinit var pubAddressView: TextView
     private lateinit var numberOfPeopleTextView: TextView
@@ -50,6 +48,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         pubAddressView = findViewById(R.id.addressTextView)
         numberOfPeopleTextView = findViewById(R.id.numberOfPeopleTextView)
         joinButton = findViewById(R.id.joinButton)
+        val realtimePub = PubCrawlerApp.instance().realtimePub
         joinButton.setOnClickListener {
             realtimePub.join(PubGoer("me"), selectedPub) {
                 Intent(this, PubActivity::class.java).apply {
@@ -68,12 +67,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         }
 
         bottomSheetBehaviour = BottomSheetBehavior.from(findViewById(R.id.infobox))
-
-        realtimePub = RealtimePub(AblyRealtime("NLYSHA.zPeslg:0aBbLE54Dsylr0qW"))
-
-        val inputStream = resources.openRawResource(R.raw.pubs)
-        pubsStore = PubsStore(GeolocationTree(), inputStream)
-
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
@@ -84,7 +77,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         map.setOnCameraIdleListener(this)
         map.setOnMarkerClickListener(this)
         map.setOnMapClickListener { hideInfo() }
-
+        val pubsStore = PubCrawlerApp.instance().pubsStore
         // Add a marker in Sydney and move the camera
         val bristol = LatLng(51.4684055, -2.7307999)
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(bristol, 10f))
@@ -120,13 +113,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
 
     override fun onCameraIdle() {
         map.cameraPosition.target.let {
+            val pubsStore = PubCrawlerApp.instance().pubsStore
             val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 2)
             when (result) {
                 is PubsStore.NearestPubsResult.PubsFound -> {
                     result.pubs.apply {
                         drawPubMarkers(this)
                         registerForPubUpdates(this)
-                        simulateJoin(result.pubs)
+                        val realtimePub = PubCrawlerApp.instance().realtimePub
                         val numbers = realtimePub.numberOfPeopleIn(this)
                         numbers.forEach {
                             Log.d(
@@ -150,6 +144,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
     }
 
     private fun showInfoFor(pub: Pub) {
+        val realtimePub = PubCrawlerApp.instance().realtimePub
         pubNameTextView.text = pub.name
         pubAddressView.text = pub.address
         numberOfPeopleTextView.text = "${realtimePub.numberOfPeopleInPub(pub)} people here"
@@ -165,20 +160,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         bottomSheetBehaviour.state = BottomSheetBehavior.STATE_COLLAPSED
     }
 
-    private fun simulateJoin(pubs: List<Pub>) {
-        Handler(Looper.getMainLooper()).postDelayed({
-            realtimePub.join(PubGoer("Ikbal"), pubs[0]) {
-                Toast.makeText(
-                    this@MainActivity,
-                    if (it) "Joined the pub" else " Couldn't join the pub",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }, 1000)
-    }
-
-
     private fun registerForPubUpdates(pubs: List<Pub>) {
+        val realtimePub = PubCrawlerApp.instance().realtimePub
         realtimePub.registerToPubUpdates(pubs) { updates ->
             updates.keys.forEach {
                 Log.d(TAG, "registerForPubUpdates: ${it.name} ${updates[it]}")
