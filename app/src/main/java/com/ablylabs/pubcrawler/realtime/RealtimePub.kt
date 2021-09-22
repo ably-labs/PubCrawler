@@ -9,76 +9,97 @@ import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
 
 private const val TAG = "RealtimePub"
-class RealtimePub(private val ably:AblyRealtime) {
+
+class RealtimePub(private val ably: AblyRealtime) {
     init {
         ably.connection.on(ConnectionStateListener { state ->
             when (state.current) {
                 ConnectionState.connected -> {
-                   //connected
+                    //connected
                 }
                 ConnectionState.failed -> {
                 }
             }
         })
     }
+
+    //following two functions might merge later
     fun numberOfPeopleIn(pubs: List<Pub>): List<Pair<Pub, Int>> {
         return pubs.map { Pair(it, ably.channels[it.name].presence.get().size) }
     }
-    //this one might include a callback later
-    fun join(who:PubGoer, which:Pub, joinResult : (success:Boolean) -> Unit){
-        ably.channels[which.name].presence.apply {
-                enterClient(who.name,"no_data",object :CompletionListener{
-                    override fun onSuccess() {
-                        joinResult(true)
-                    }
 
-                    override fun onError(reason: ErrorInfo?) {
-                        joinResult(false)
-                    }
-                })
+    fun numberOfPeopleInPub(pub: Pub) = ably.channels[pub.name].presence.get().size
+
+    fun join(who: PubGoer, which: Pub, joinResult: (success: Boolean) -> Unit) {
+        ably.channels[which.name].presence.apply {
+            enterClient(who.name, "no_data", object : CompletionListener {
+                override fun onSuccess() {
+                    joinResult(true)
+                }
+
+                override fun onError(reason: ErrorInfo?) {
+                    joinResult(false)
+                }
+            })
 
         }
     }
-    //this one might also include a callback for later
-    fun leave(who:PubGoer, which:Pub){
+
+    fun leave(who: PubGoer, which: Pub) {
 
         TODO()
     }
 
-    fun sendMessage(who:PubGoer, toWhom:PubGoer, message:String){
+    fun sendMessage(who: PubGoer, toWhom: PubGoer, message: String) {
         TODO()
     }
 
-    fun offerDrink(who:PubGoer, toWhom:PubGoer){
-       TODO()
-    }
-    fun acceptDrink(who:PubGoer, fromWhom:PubGoer){
+    fun offerDrink(who: PubGoer, toWhom: PubGoer) {
         TODO()
     }
-    fun rejectDrink(who:PubGoer, fromWhom:PubGoer){
+
+    fun acceptDrink(who: PubGoer, fromWhom: PubGoer) {
         TODO()
     }
+
+    fun rejectDrink(who: PubGoer, fromWhom: PubGoer) {
+        TODO()
+    }
+
     //all pubgoers in a pub
-    fun allPubGoers(which:Pub):List<PubGoer>{
+    fun allPubGoers(which: Pub): List<PubGoer> {
         TODO()
     }
 
-    fun registerToJoinEvents(pub:Pub, join : (pubGoer:PubGoer)-> Unit ){
+    fun registerToJoinEvents(pub: Pub, join: (pubGoer: PubGoer) -> Unit) {
         TODO()
     }
 
-    fun registerToLeaveEvents(pub:Pub, join : (pubGoer:PubGoer)-> Unit ){
+    fun registerToLeaveEvents(pub: Pub, join: (pubGoer: PubGoer) -> Unit) {
         TODO()
     }
-    fun registerToMessages(pub:Pub, messageReceived : (pubGoer:PubGoer,message:String)-> Unit ){
+
+    fun registerToMessages(pub: Pub, messageReceived: (pubGoer: PubGoer, message: String) -> Unit) {
         TODO()
     }
-    fun registerToDrinkOffers(pub:Pub, offerReceived : (pubGoer:PubGoer)-> Unit ){
+
+    fun registerToDrinkOffers(pub: Pub, offerReceived: (pubGoer: PubGoer) -> Unit) {
         TODO()
     }
-    fun registerToPubUpdates(pubs:List<Pub>, update : (pubUpdate: Map<Pub, Int>)-> Unit ){
-        pubs.forEach { ably.channels[it.name].presence.subscribe{
-            Log.d(TAG, "registerToPubUpdates: ")
-        } }
+
+    //update function might contain a bit more things, actions
+    fun registerToPubUpdates(pub: Pub, update: () -> Unit) {
+        ably.channels[pub.name].presence.subscribe {
+            update()
+        }
+
+    }
+   //below function might not be necessary, check later
+    fun registerToPubUpdates(pubs: List<Pub>, update: (pubUpdate: Map<Pub, Int>) -> Unit) {
+        pubs.forEach {
+            ably.channels[it.name].presence.subscribe {
+                Log.d(TAG, "registerToPubUpdates: ")
+            }
+        }
     }
 }

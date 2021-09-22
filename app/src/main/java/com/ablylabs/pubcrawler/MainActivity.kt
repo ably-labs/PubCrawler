@@ -50,7 +50,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         joinButton = findViewById(R.id.joinButton)
         joinButton.setOnClickListener {
             realtimePub.join(PubGoer("me"),selectedPub){
+                Log.d(TAG, "join pub result $it")
                 Toast.makeText(this,if (it) "Joined pub" else "Cannot join pub", Toast.LENGTH_SHORT).show()
+
+                //todo create a new pub screen and show user that screen
             }
         }
 
@@ -136,9 +139,15 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         return true
     }
     private fun showInfoFor(pub: Pub){
-        pubNameTextView.text = selectedPub.name
-        pubAddressView.text = selectedPub.address
+        pubNameTextView.text = pub.name
+        pubAddressView.text = pub.address
+        numberOfPeopleTextView.text = "${realtimePub.numberOfPeopleInPub(pub)} people here"
         bottomSheetBehaviour.state = BottomSheetBehavior.STATE_EXPANDED
+
+        //also register for updates
+        realtimePub.registerToPubUpdates(pub){
+            numberOfPeopleTextView.text = "${realtimePub.numberOfPeopleInPub(pub)} people here"
+        }
     }
     private fun hideInfo(){
         bottomSheetBehaviour.state = BottomSheetBehavior.STATE_COLLAPSED
@@ -150,6 +159,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
             }
         }, 1000)
     }
+
 
     private fun registerForPubUpdates(pubs: List<Pub>) {
         realtimePub.registerToPubUpdates(pubs) { updates ->
