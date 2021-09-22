@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
     override fun onCameraIdle() {
         map.cameraPosition.target.let {
             val pubsStore = PubCrawlerApp.instance().pubsStore
-            val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 2)
+            val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 10)
             when (result) {
                 is PubsStore.NearestPubsResult.PubsFound -> {
                     result.pubs.apply {
