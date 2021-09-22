@@ -136,19 +136,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
     override fun onCameraIdle() {
         map.cameraPosition.target.let {
             val pubsStore = PubCrawlerApp.instance().pubsStore
-            val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 2)
+            val now = System.currentTimeMillis()
+            val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 10)
+            val later = System.currentTimeMillis()
+            Log.d(TAG, "Nearby computation time ${later-now}ms")
             when (result) {
                 is PubsStore.NearestPubsResult.PubsFound -> {
                     result.pubs.apply {
                         drawPubMarkers(this)
-                        val realtimePub = PubCrawlerApp.instance().realtimePub
-                        val numbers = realtimePub.numberOfPeopleIn(this)
-                        numbers.forEach {
-                            Log.d(
-                                TAG,
-                                "number of people in ${it.first.name} is ${it.second}"
-                            )
-                        }
                     }
                 }
                 is PubsStore.NearestPubsResult.Error -> TODO()
