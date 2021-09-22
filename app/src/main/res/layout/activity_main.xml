@@ -1,24 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
         <fragment
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/map"
-            tools:context=".MainActivit"
-            android:name="com.google.android.gms.maps.SupportMapFragment" />
-       <ProgressBar
-           android:id="@+id/progress"
-           android:layout_width="wrap_content"
-           android:layout_height="wrap_content"
-           android:layout_gravity="center"/>
+            tools:context=".MainActivit" />
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
     </FrameLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:id="@+id/infobox"
+        style="?attr/bottomSheetStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        android:background="@color/cardview_light_background">
+
+        <TextView
+            android:id="@+id/pubNameTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20dp"
+            tools:text="Kings Charles inn" />
+
+        <TextView
+            android:id="@+id/addressTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="14dp"
+            tools:text="18 streets bristol" />
+
+        <TextView
+            android:id="@+id/numberOfPeopleTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="16dp"
+            tools:text="18 streets bristol" />
+
+        <Button
+            android:id="@+id/joinButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/join" />
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

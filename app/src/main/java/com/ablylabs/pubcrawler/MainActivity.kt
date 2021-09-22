@@ -4,8 +4,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.view.View
-import android.widget.ProgressBar
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.ablylabs.pubcrawler.pubservice.Pub
 import com.ablylabs.pubcrawler.pubservice.PubsStore
@@ -19,6 +18,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import io.ably.lib.realtime.AblyRealtime
 import java.util.*
 
@@ -26,17 +26,33 @@ private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCameraIdleListener,GoogleMap.OnMarkerClickListener {
 
+    private lateinit var bottomSheetBehaviour: BottomSheetBehavior<FrameLayout>
     private lateinit var pubsStore: PubsStore ///this should move somewhere else in production app
     private lateinit var progress: ProgressBar
     private lateinit var map: GoogleMap
     private lateinit var realtimePub: RealtimePub
+    private lateinit var pubNameTextView: TextView
+    private lateinit var pubAddressView: TextView
+    private lateinit var numberOfPeopleTextView: TextView
+    private lateinit var joinButton:Button
     private val markers =
         mutableListOf<Marker>() //reuse markers in here if not empty, should be the same count
-
+    private lateinit var selectedPub:Pub
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         progress = findViewById(R.id.progress)
+        pubNameTextView = findViewById(R.id.pubNameTextView)
+        pubAddressView = findViewById(R.id.addressTextView)
+        numberOfPeopleTextView = findViewById(R.id.numberOfPeopleTextView)
+        joinButton = findViewById(R.id.joinButton)
+        joinButton.setOnClickListener {
+            realtimePub.join(PubGoer("me"),selectedPub){
+                Toast.makeText(this,if (it) "Joined pub" else "Cannot join pub", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        bottomSheetBehaviour = BottomSheetBehavior.from(findViewById(R.id.infobox))
 
         realtimePub = RealtimePub(AblyRealtime("NLYSHA.zPeslg:0aBbLE54Dsylr0qW"))
 
@@ -111,8 +127,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
     }
 
     override fun onMarkerClick(marker: Marker): Boolean {
-        val pub = marker.tag as Pub
-        Toast.makeText(this, "Tapped on ${pub.name}",Toast.LENGTH_SHORT).show()
+        selectedPub = marker.tag as Pub
+        pubNameTextView.text = selectedPub.name
+        pubAddressView.text = selectedPub.address
+        Toast.makeText(this, "Tapped on ${selectedPub.name}",Toast.LENGTH_SHORT).show()
+
         return true
     }
     private fun simulateJoin(pubs: List<Pub>){
