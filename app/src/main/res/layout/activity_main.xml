@@ -59,7 +59,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:textColor="@android:color/holo_green_dark"
             android:textSize="16dp"
+            android:textStyle="bold"
             tools:text="18 streets bristol" />
 
         <Button

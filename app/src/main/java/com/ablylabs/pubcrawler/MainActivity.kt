@@ -1,5 +1,6 @@
 package com.ablylabs.pubcrawler
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -20,13 +21,14 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import java.util.*
 
 private const val TAG = "MainActivity"
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback,
-    GoogleMap.OnCameraIdleListener,GoogleMap.OnMarkerClickListener {
+    GoogleMap.OnCameraIdleListener, GoogleMap.OnMarkerClickListener {
 
     private lateinit var bottomSheetBehaviour: BottomSheetBehavior<FrameLayout>
     private lateinit var pubsStore: PubsStore ///this should move somewhere else in production app
@@ -36,10 +38,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
     private lateinit var pubNameTextView: TextView
     private lateinit var pubAddressView: TextView
     private lateinit var numberOfPeopleTextView: TextView
-    private lateinit var joinButton:Button
+    private lateinit var joinButton: Button
     private val markers =
         mutableListOf<Marker>() //reuse markers in here if not empty, should be the same count
-    private lateinit var selectedPub:Pub
+    private lateinit var selectedPub: Pub
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -49,9 +51,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         numberOfPeopleTextView = findViewById(R.id.numberOfPeopleTextView)
         joinButton = findViewById(R.id.joinButton)
         joinButton.setOnClickListener {
-            realtimePub.join(PubGoer("me"),selectedPub){
+            realtimePub.join(PubGoer("me"), selectedPub) {
+                Intent(this, PubActivity::class.java).apply {
+                    putExtra(PubActivity.EXTRA_PUB_JSON, Gson().toJson(selectedPub))
+                    startActivity(this)
+                }
                 Log.d(TAG, "join pub result $it")
-                Toast.makeText(this,if (it) "Joined pub" else "Cannot join pub", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    if (it) "Joined pub" else "Cannot join pub",
+                    Toast.LENGTH_SHORT
+                ).show()
 
                 //todo create a new pub screen and show user that screen
             }
@@ -138,24 +148,31 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         showInfoFor(selectedPub)
         return true
     }
-    private fun showInfoFor(pub: Pub){
+
+    private fun showInfoFor(pub: Pub) {
         pubNameTextView.text = pub.name
         pubAddressView.text = pub.address
         numberOfPeopleTextView.text = "${realtimePub.numberOfPeopleInPub(pub)} people here"
         bottomSheetBehaviour.state = BottomSheetBehavior.STATE_EXPANDED
 
         //also register for updates
-        realtimePub.registerToPubUpdates(pub){
+        realtimePub.registerToPubUpdates(pub) {
             numberOfPeopleTextView.text = "${realtimePub.numberOfPeopleInPub(pub)} people here"
         }
     }
-    private fun hideInfo(){
+
+    private fun hideInfo() {
         bottomSheetBehaviour.state = BottomSheetBehavior.STATE_COLLAPSED
     }
-    private fun simulateJoin(pubs: List<Pub>){
+
+    private fun simulateJoin(pubs: List<Pub>) {
         Handler(Looper.getMainLooper()).postDelayed({
-            realtimePub.join(PubGoer("Ikbal"),pubs[0]){
-                Toast.makeText(this@MainActivity,if(it)  "Joined the pub" else " Couldn't join the pub",Toast.LENGTH_SHORT).show()
+            realtimePub.join(PubGoer("Ikbal"), pubs[0]) {
+                Toast.makeText(
+                    this@MainActivity,
+                    if (it) "Joined the pub" else " Couldn't join the pub",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }, 1000)
     }
