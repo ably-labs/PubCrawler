@@ -32,6 +32,9 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp"
+        app:behavior_peekHeight="0dp"
+
+        app:behavior_hideable="true"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
         android:background="@color/cardview_light_background">
 
@@ -39,6 +42,7 @@
             android:id="@+id/pubNameTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+
             android:textSize="20dp"
             tools:text="Kings Charles inn" />
 

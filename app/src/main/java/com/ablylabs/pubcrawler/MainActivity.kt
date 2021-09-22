@@ -2,6 +2,7 @@ package com.ablylabs.pubcrawler
 
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.*
@@ -24,7 +25,8 @@ import java.util.*
 
 private const val TAG = "MainActivity"
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCameraIdleListener,GoogleMap.OnMarkerClickListener {
+class MainActivity : AppCompatActivity(), OnMapReadyCallback,
+    GoogleMap.OnCameraIdleListener,GoogleMap.OnMarkerClickListener {
 
     private lateinit var bottomSheetBehaviour: BottomSheetBehavior<FrameLayout>
     private lateinit var pubsStore: PubsStore ///this should move somewhere else in production app
@@ -68,6 +70,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
         map = googleMap!!
         map.setOnCameraIdleListener(this)
         map.setOnMarkerClickListener(this)
+        map.setOnMapClickListener { hideInfo() }
 
         // Add a marker in Sydney and move the camera
         val bristol = LatLng(51.4684055, -2.7307999)
@@ -128,14 +131,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnCamera
 
     override fun onMarkerClick(marker: Marker): Boolean {
         selectedPub = marker.tag as Pub
-        pubNameTextView.text = selectedPub.name
-        pubAddressView.text = selectedPub.address
-        Toast.makeText(this, "Tapped on ${selectedPub.name}",Toast.LENGTH_SHORT).show()
 
+        showInfoFor(selectedPub)
         return true
     }
+    private fun showInfoFor(pub: Pub){
+        pubNameTextView.text = selectedPub.name
+        pubAddressView.text = selectedPub.address
+        bottomSheetBehaviour.state = BottomSheetBehavior.STATE_EXPANDED
+    }
+    private fun hideInfo(){
+        bottomSheetBehaviour.state = BottomSheetBehavior.STATE_COLLAPSED
+    }
     private fun simulateJoin(pubs: List<Pub>){
-        Handler().postDelayed({
+        Handler(Looper.getMainLooper()).postDelayed({
             realtimePub.join(PubGoer("Ikbal"),pubs[0]){
                 Toast.makeText(this@MainActivity,if(it)  "Joined the pub" else " Couldn't join the pub",Toast.LENGTH_SHORT).show()
             }
