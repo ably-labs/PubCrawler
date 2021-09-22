@@ -19,6 +19,8 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.dialog.MaterialDialogs
 import com.google.gson.Gson
 
 private const val TAG = "MainActivity"
@@ -46,20 +48,21 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         joinButton = findViewById(R.id.joinButton)
         val realtimePub = PubCrawlerApp.instance().realtimePub
         joinButton.setOnClickListener {
-            realtimePub.join(PubGoer("Ikbal"), selectedPub) {
-                Intent(this, PubActivity::class.java).apply {
-                    putExtra(PubActivity.EXTRA_PUB_JSON, Gson().toJson(selectedPub))
-                    startActivity(this)
+            checkName(this){name->
+                realtimePub.join(PubGoer(name), selectedPub) {
+                    Intent(this, PubActivity::class.java).apply {
+                        putExtra(PubActivity.EXTRA_PUB_JSON, Gson().toJson(selectedPub))
+                        startActivity(this)
+                    }
+                    Log.d(TAG, "join pub result $it")
+                    Toast.makeText(
+                        this,
+                        if (it) "Joined pub" else "Cannot join pub",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-                Log.d(TAG, "join pub result $it")
-                Toast.makeText(
-                    this,
-                    if (it) "Joined pub" else "Cannot join pub",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                //todo create a new pub screen and show user that screen
             }
+
         }
 
         bottomSheetBehaviour = BottomSheetBehavior.from(findViewById(R.id.infobox))
