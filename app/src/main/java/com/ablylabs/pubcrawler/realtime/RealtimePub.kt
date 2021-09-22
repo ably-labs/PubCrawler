@@ -7,6 +7,7 @@ import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
+import io.ably.lib.types.PresenceMessage
 
 private const val TAG = "RealtimePub"
 
@@ -94,17 +95,14 @@ class RealtimePub(private val ably: AblyRealtime) {
     }
 
     //update function might contain a bit more things, actions
-    fun registerToPubUpdates(pub: Pub, update: () -> Unit) {
+    fun registerToPubUpdates(pub: Pub, updated: (update:PubUpdate) -> Unit) {
         ably.channels[pub.name].presence.subscribe {
-            update()
-        }
-
-    }
-   //below function might not be necessary, check later
-    fun registerToPubUpdates(pubs: List<Pub>, update: (pubUpdate: Map<Pub, Int>) -> Unit) {
-        pubs.forEach {
-            ably.channels[it.name].presence.subscribe {
-                Log.d(TAG, "registerToPubUpdates: ")
+            when(it.action){
+                PresenceMessage.Action.enter -> updated(PubUpdate.Join(PubGoer(it.clientId)))
+                PresenceMessage.Action.leave -> updated(PubUpdate.Leave(PubGoer(it.clientId)))
+                PresenceMessage.Action.absent -> TODO()
+                PresenceMessage.Action.present -> TODO()
+                PresenceMessage.Action.update -> TODO()
             }
         }
     }

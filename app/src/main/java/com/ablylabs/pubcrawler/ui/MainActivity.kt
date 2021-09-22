@@ -113,12 +113,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
     override fun onCameraIdle() {
         map.cameraPosition.target.let {
             val pubsStore = PubCrawlerApp.instance().pubsStore
-            val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 10)
+            val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 2)
             when (result) {
                 is PubsStore.NearestPubsResult.PubsFound -> {
                     result.pubs.apply {
                         drawPubMarkers(this)
-                        registerForPubUpdates(this)
                         val realtimePub = PubCrawlerApp.instance().realtimePub
                         val numbers = realtimePub.numberOfPeopleIn(this)
                         numbers.forEach {
@@ -157,15 +156,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
 
     private fun hideInfo() {
         bottomSheetBehaviour.state = BottomSheetBehavior.STATE_COLLAPSED
-    }
-
-    private fun registerForPubUpdates(pubs: List<Pub>) {
-        val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.registerToPubUpdates(pubs) { updates ->
-            updates.keys.forEach {
-                Log.d(TAG, "registerForPubUpdates: ${it.name} ${updates[it]}")
-            }
-        }
     }
 
 }
