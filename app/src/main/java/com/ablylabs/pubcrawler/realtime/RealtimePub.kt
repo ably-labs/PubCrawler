@@ -11,6 +11,7 @@ import io.ably.lib.types.ErrorInfo
 private const val TAG = "RealtimePub"
 
 class RealtimePub(private val ably: AblyRealtime) {
+
     init {
         ably.connection.on(ConnectionStateListener { state ->
             when (state.current) {
@@ -27,7 +28,6 @@ class RealtimePub(private val ably: AblyRealtime) {
     fun numberOfPeopleIn(pubs: List<Pub>): List<Pair<Pub, Int>> {
         return pubs.map { Pair(it, ably.channels[it.name].presence.get().size) }
     }
-
     fun numberOfPeopleInPub(pub: Pub) = ably.channels[pub.name].presence.get().size
 
     fun join(who: PubGoer, which: Pub, joinResult: (success: Boolean) -> Unit) {
@@ -68,7 +68,13 @@ class RealtimePub(private val ably: AblyRealtime) {
 
     //all pubgoers in a pub
     fun allPubGoers(which: Pub): List<PubGoer> {
-        TODO()
+        val messages = ably.channels[which.name].presence.get()
+        messages?.let {
+            if (it.isNotEmpty()){
+                return it.toList().map { PubGoer(it.clientId) }
+            }
+        }
+        return listOf()
     }
 
     fun registerToJoinEvents(pub: Pub, join: (pubGoer: PubGoer) -> Unit) {

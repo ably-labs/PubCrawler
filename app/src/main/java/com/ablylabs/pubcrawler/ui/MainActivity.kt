@@ -1,18 +1,16 @@
-package com.ablylabs.pubcrawler
+package com.ablylabs.pubcrawler.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import com.ablylabs.pubcrawler.PubCrawlerApp
+import com.ablylabs.pubcrawler.R
 import com.ablylabs.pubcrawler.pubservice.Pub
 import com.ablylabs.pubcrawler.pubservice.PubsStore
-import com.ablylabs.pubcrawler.pubservice.geo.GeolocationTree
 import com.ablylabs.pubcrawler.realtime.PubGoer
-import com.ablylabs.pubcrawler.realtime.RealtimePub
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -22,8 +20,6 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.gson.Gson
-import io.ably.lib.realtime.AblyRealtime
-import java.util.*
 
 private const val TAG = "MainActivity"
 
@@ -50,7 +46,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         joinButton = findViewById(R.id.joinButton)
         val realtimePub = PubCrawlerApp.instance().realtimePub
         joinButton.setOnClickListener {
-            realtimePub.join(PubGoer("me"), selectedPub) {
+            realtimePub.join(PubGoer("Ikbal"), selectedPub) {
                 Intent(this, PubActivity::class.java).apply {
                     putExtra(PubActivity.EXTRA_PUB_JSON, Gson().toJson(selectedPub))
                     startActivity(this)
