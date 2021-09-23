@@ -13,7 +13,6 @@ import com.ablylabs.pubcrawler.realtime.PubGoer
 import com.ablylabs.pubcrawler.realtime.PubUpdate
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
-import kotlin.math.log
 
 private const val TAG = "PubActivity"
 
@@ -60,30 +59,43 @@ class PubActivity : AppCompatActivity() {
     }
 
     private fun registerToUpdates(pub: Pub) {
-        val contentView = findViewById<View>(android.R.id.content)
         val realtimePub = PubCrawlerApp.instance().realtimePub
         realtimePub.registerToPubUpdates(pub) {
             Log.d(TAG, "registerToUpdates: $it")
             when (it) {
                 is PubUpdate.Join -> {
-                    peopleAdapter.add(it.pubGoer)
-                    Snackbar.make(
-                        contentView,
-                        "${it.pubGoer.name} joined the pub",
-                        Snackbar.LENGTH_SHORT
-                    ).show()
+                    someoneJustJoined(it.pubGoer)
                 }
                 is PubUpdate.Leave -> {
-                    peopleAdapter.remove(it.pubGoer)
-                    Snackbar.make(
-                        contentView,
-                        "${it.pubGoer.name} left the pub",
-                        Snackbar.LENGTH_SHORT
-                    ).show()
+                    someoneJustLeft(it.pubGoer)
                 }
             }
             listPeople(pub)
         }
+    }
+
+    private fun someoneJustJoined(
+        pubGoer: PubGoer
+    ) {
+        val contentView = findViewById<View>(android.R.id.content)
+        Snackbar.make(
+            contentView,
+            "${pubGoer.name} joined the pub",
+            Snackbar.LENGTH_LONG
+        ).setAction(R.string.say_hi) {
+            Toast.makeText(this, "Should say hi to joining user", Toast.LENGTH_SHORT).show()
+        }.show()
+    }
+
+    private fun someoneJustLeft(
+        pubGoer: PubGoer
+    ) {
+        val contentView = findViewById<View>(android.R.id.content)
+        Snackbar.make(
+            contentView,
+            "${pubGoer.name} left the pub",
+            Snackbar.LENGTH_SHORT
+        ).show()
     }
 
     companion object {
