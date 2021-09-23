@@ -12,7 +12,6 @@ import io.ably.lib.types.PresenceMessage
 private const val TAG = "RealtimePub"
 
 class RealtimePub(private val ably: AblyRealtime) {
-
     init {
         ably.connection.on(ConnectionStateListener { state ->
             when (state.current) {
