@@ -102,7 +102,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         val pubsStore = PubCrawlerApp.instance().pubsStore
         // Add a marker in Sydney and move the camera
         val bristol = LatLng(51.4684055, -2.7307999)
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(bristol, 10f))
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(bristol, 12f))
         progress.apply {
             visibility = View.VISIBLE
             //this should move to a bg thread / coroutine later

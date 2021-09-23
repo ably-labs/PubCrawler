@@ -25,9 +25,6 @@ class RealtimePub(private val ably: AblyRealtime) {
     }
 
     //following two functions might merge later
-    fun numberOfPeopleIn(pubs: List<Pub>): List<Pair<Pub, Int>> {
-        return pubs.map { Pair(it, ably.channels[it.name].presence.get().size) }
-    }
     fun numberOfPeopleInPub(pub: Pub) = ably.channels[pub.name].presence.get().size
 
     fun join(who: PubGoer, which: Pub, joinResult: (success: Boolean) -> Unit) {
@@ -45,9 +42,19 @@ class RealtimePub(private val ably: AblyRealtime) {
         }
     }
 
-    fun leave(who: PubGoer, which: Pub) {
+    fun leave(who: PubGoer, which: Pub,leaveResult: (success: Boolean) -> Unit ) {
+        ably.channels[which.name].presence.apply {
+            leaveClient(who.name, "no_data", object : CompletionListener {
+                override fun onSuccess() {
+                    leaveResult(true)
+                }
 
-        TODO()
+                override fun onError(reason: ErrorInfo?) {
+                    leaveResult(false)
+                }
+            })
+
+        }
     }
 
     fun sendMessage(who: PubGoer, toWhom: PubGoer, message: String) {

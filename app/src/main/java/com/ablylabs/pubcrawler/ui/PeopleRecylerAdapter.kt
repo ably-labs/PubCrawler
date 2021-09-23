@@ -16,12 +16,12 @@ class PeopleRecylerAdapter : RecyclerView.Adapter<PeopleRecylerAdapter.ViewHolde
         people.addAll(list)
         notifyDataSetChanged()
     }
-    fun addPubGoer(pubGoer: PubGoer) {
+    fun add(pubGoer: PubGoer) {
         people.add(pubGoer)
         notifyDataSetChanged()
     }
 
-    fun removePubGoer(pubGoer: PubGoer) {
+    fun remove(pubGoer: PubGoer) {
         people.remove(pubGoer)
         notifyDataSetChanged()
     }
