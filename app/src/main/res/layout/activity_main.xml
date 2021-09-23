@@ -27,7 +27,7 @@
 
     <LinearLayout
         android:id="@+id/infobox"
-        style="?attr/bottomSheetStyle"
+        style="@style/InfoboxStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -35,8 +35,7 @@
         app:behavior_peekHeight="0dp"
 
         app:behavior_hideable="true"
-        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
-        android:background="@color/cardview_light_background">
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
         <TextView
             android:id="@+id/pubNameTextView"
