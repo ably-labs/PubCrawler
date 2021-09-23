@@ -14,16 +14,13 @@ class PeopleRecylerAdapter : RecyclerView.Adapter<PeopleRecylerAdapter.ViewHolde
     fun setPubGoers(list:List<PubGoer>){
         people.clear()
         people.addAll(list)
-        notifyDataSetChanged()
     }
     fun add(pubGoer: PubGoer) {
         people.add(pubGoer)
-        notifyDataSetChanged()
     }
 
     fun remove(pubGoer: PubGoer) {
         people.remove(pubGoer)
-        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

@@ -1,6 +1,7 @@
 package com.ablylabs.pubcrawler.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +13,9 @@ import com.ablylabs.pubcrawler.realtime.PubGoer
 import com.ablylabs.pubcrawler.realtime.PubUpdate
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
+import kotlin.math.log
+
+private const val TAG = "PubActivity"
 
 class PubActivity : AppCompatActivity() {
     private lateinit var peopleRecyclerView: RecyclerView
@@ -22,7 +26,7 @@ class PubActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pub)
         peopleRecyclerView = findViewById(R.id.peopleRecyclerView)
-        intent.extras?.let {bundle ->
+        intent.extras?.let { bundle ->
             bundle.getString(EXTRA_PUB_JSON)?.let {
                 pub = Gson().fromJson(it, Pub::class.java)
                 supportActionBar?.title = pub.name
@@ -39,34 +43,46 @@ class PubActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-       /* val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.leave(pubGoer,pub){
-            if (it){onBackPressed()}else{
-                Toast.makeText(this,"Sorry, can't leave the pub",Toast.LENGTH_SHORT).show()
-            }
-        }*/
+        /* val realtimePub = PubCrawlerApp.instance().realtimePub
+         realtimePub.leave(pubGoer,pub){
+             if (it){onBackPressed()}else{
+                 Toast.makeText(this,"Sorry, can't leave the pub",Toast.LENGTH_SHORT).show()
+             }
+         }*/
         super.onBackPressed()
     }
 
     private fun listPeople(pub: Pub) {
+        Log.d(TAG, "listPeople: ")
         val realtimePub = PubCrawlerApp.instance().realtimePub
         peopleAdapter.setPubGoers(realtimePub.allPubGoers(pub))
+        peopleAdapter.notifyDataSetChanged()
     }
 
     private fun registerToUpdates(pub: Pub) {
-        val contentView =findViewById<View>(android.R.id.content)
+        val contentView = findViewById<View>(android.R.id.content)
         val realtimePub = PubCrawlerApp.instance().realtimePub
         realtimePub.registerToPubUpdates(pub) {
+            Log.d(TAG, "registerToUpdates: $it")
             when (it) {
                 is PubUpdate.Join -> {
                     peopleAdapter.add(it.pubGoer)
-                    Snackbar.make(contentView,"${it.pubGoer.name} joined the pub",Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(
+                        contentView,
+                        "${it.pubGoer.name} joined the pub",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
                 }
                 is PubUpdate.Leave -> {
                     peopleAdapter.remove(it.pubGoer)
-                    Snackbar.make(contentView,"${it.pubGoer.name} left the pub",Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(
+                        contentView,
+                        "${it.pubGoer.name} left the pub",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
                 }
             }
+            listPeople(pub)
         }
     }
 

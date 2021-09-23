@@ -1,5 +1,6 @@
 package com.ablylabs.pubcrawler.realtime
 
+import android.util.Log
 import com.ablylabs.pubcrawler.pubservice.Pub
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.CompletionListener
@@ -102,6 +103,7 @@ class RealtimePub(private val ably: AblyRealtime) {
 
     fun registerToPubUpdates(pub: Pub, updated: (update:PubUpdate) -> Unit) {
         ably.channels[pub.name].presence.subscribe {
+            Log.d(TAG, "registerToPubUpdates: ${it.action} ${it.clientId}")
             when(it.action){
                 PresenceMessage.Action.enter -> updated(PubUpdate.Join(PubGoer(it.clientId)))
                 PresenceMessage.Action.leave -> updated(PubUpdate.Leave(PubGoer(it.clientId)))
