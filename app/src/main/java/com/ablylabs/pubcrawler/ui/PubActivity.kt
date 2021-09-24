@@ -19,13 +19,14 @@ private const val TAG = "PubActivity"
 
 class PubActivity : AppCompatActivity() {
     private lateinit var peopleRecyclerView: RecyclerView
-    private val peopleAdapter = PeopleRecylerAdapter()
+    private lateinit var peopleAdapter:PeopleRecylerAdapter
     private lateinit var pub: Pub
     private lateinit var pubGoer: PubGoer
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pub)
         peopleRecyclerView = findViewById(R.id.peopleRecyclerView)
+        peopleAdapter = PeopleRecylerAdapter()
         findViewById<Button>(R.id.leaveButton).setOnClickListener {
             leavePub()
         }
@@ -45,6 +46,11 @@ class PubActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        Log.d(TAG, "onPause: ")
+    }
+
     private fun leavePub() {
         PubCrawlerApp.instance().realtimePub.leave(pubGoer, pub) {
             if (it) {
@@ -60,22 +66,25 @@ class PubActivity : AppCompatActivity() {
     }
 
     private fun listPeople(pub: Pub) {
-        Log.d(TAG, "listPeople: ")
+
         val realtimePub = PubCrawlerApp.instance().realtimePub
-        peopleAdapter.setPubGoers(realtimePub.allPubGoers(pub))
+        val allPresent = realtimePub.allPubGoers(pub)
+        Log.d(TAG, "listPeople: ${allPresent.size}")
+        peopleAdapter.setPubGoers(allPresent)
         peopleAdapter.notifyDataSetChanged()
     }
 
     private fun registerToUpdates(pub: Pub) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
         realtimePub.registerToPresenceUpdates(pub) {
-            Log.d(TAG, "registerToUpdates: $it")
             when (it) {
                 is PubUpdate.Join -> {
                     someoneJustJoined(it.pubGoer)
+                    Log.d(TAG, "${it.pubGoer.name} joined")
                 }
                 is PubUpdate.Leave -> {
                     someoneJustLeft(it.pubGoer)
+                    Log.d(TAG, "${it.pubGoer.name} left")
                 }
             }
             listPeople(pub)
