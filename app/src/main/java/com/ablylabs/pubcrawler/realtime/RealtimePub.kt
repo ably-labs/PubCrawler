@@ -84,14 +84,6 @@ class RealtimePub(private val ably: AblyRealtime) {
         return listOf()
     }
 
-    fun registerToJoinEvents(pub: Pub, join: (pubGoer: PubGoer) -> Unit) {
-        TODO()
-    }
-
-    fun registerToLeaveEvents(pub: Pub, join: (pubGoer: PubGoer) -> Unit) {
-        TODO()
-    }
-
     fun registerToMessages(pub: Pub, messageReceived: (pubGoer: PubGoer, message: String) -> Unit) {
         TODO()
     }
