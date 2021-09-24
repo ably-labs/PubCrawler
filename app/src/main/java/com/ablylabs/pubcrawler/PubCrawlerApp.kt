@@ -22,7 +22,7 @@ class PubCrawlerApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        realtimePub = RealtimePub(AblyRealtime("NLYSHA.zPeslg:0aBbLE54Dsylr0qW"))
+        realtimePub = RealtimePub(AblyRealtime(getString(R.string.ably_key)))
         val inputStream = resources.openRawResource(R.raw.pubs)
         pubsStore = PubsStore(GeolocationTree(), inputStream)
     }

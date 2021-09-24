@@ -8,15 +8,19 @@ plugins {
 android {
     compileSdk 31
 
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file("local.properties").newDataInputStream())
     defaultConfig {
         applicationId "com.ablylabs.pubcrawler"
         minSdk 21
         targetSdk 31
         versionCode 1
         versionName "1.0"
+        resValue "string", "ably_key", properties.getProperty("ABLY_KEY", "")
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
 
     buildTypes {
         release {
