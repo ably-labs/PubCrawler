@@ -49,17 +49,20 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         val realtimePub = PubCrawlerApp.instance().realtimePub
         joinButton.setOnClickListener {
             checkName(this) { name ->
-                realtimePub.join(PubGoer(name), selectedPub) {
-                    Intent(this, PubActivity::class.java).apply {
-                        putExtra(PubActivity.EXTRA_PUB_JSON, Gson().toJson(selectedPub))
-                        startActivity(this)
+                val who = PubGoer(name)
+                realtimePub.join(who, selectedPub) {
+                    if (it){
+                        Intent(this, PubActivity::class.java).apply {
+                            val gson = Gson()
+                            putExtra(PubActivity.EXTRA_PUB_JSON, gson.toJson(selectedPub))
+                            putExtra(PubActivity.EXTRA_PUBGOER_JSON,gson.toJson(who))
+                            startActivity(this)
+                        }
+                    }else{
+                        Toast.makeText(
+                            this,"Cannot join pub", Toast.LENGTH_SHORT).show()
                     }
-                    Log.d(TAG, "join pub result $it")
-                    Toast.makeText(
-                        this,
-                        if (it) "Joined pub" else "Cannot join pub",
-                        Toast.LENGTH_SHORT
-                    ).show()
+
                 }
             }
 

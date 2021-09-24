@@ -3,6 +3,7 @@ package com.ablylabs.pubcrawler.ui
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
@@ -25,6 +26,9 @@ class PubActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pub)
         peopleRecyclerView = findViewById(R.id.peopleRecyclerView)
+        findViewById<Button>(R.id.leaveButton).setOnClickListener {
+            leavePub()
+        }
         intent.extras?.let { bundle ->
             bundle.getString(EXTRA_PUB_JSON)?.let {
                 pub = Gson().fromJson(it, Pub::class.java)
@@ -41,14 +45,18 @@ class PubActivity : AppCompatActivity() {
         }
     }
 
+    private fun leavePub() {
+        PubCrawlerApp.instance().realtimePub.leave(pubGoer, pub) {
+            if (it) {
+                finish()
+            } else {
+                Toast.makeText(this, "Sorry, cannot leave the pub", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     override fun onBackPressed() {
-        /* val realtimePub = PubCrawlerApp.instance().realtimePub
-         realtimePub.leave(pubGoer,pub){
-             if (it){onBackPressed()}else{
-                 Toast.makeText(this,"Sorry, can't leave the pub",Toast.LENGTH_SHORT).show()
-             }
-         }*/
-        super.onBackPressed()
+      leavePub()
     }
 
     private fun listPeople(pub: Pub) {
