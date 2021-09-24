@@ -68,7 +68,7 @@ class PubActivity : AppCompatActivity() {
 
     private fun registerToUpdates(pub: Pub) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.registerToPubUpdates(pub) {
+        realtimePub.registerToPresenceUpdates(pub) {
             Log.d(TAG, "registerToUpdates: $it")
             when (it) {
                 is PubUpdate.Join -> {

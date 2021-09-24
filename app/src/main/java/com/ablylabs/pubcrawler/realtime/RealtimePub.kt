@@ -1,6 +1,5 @@
 package com.ablylabs.pubcrawler.realtime
 
-import android.util.Log
 import com.ablylabs.pubcrawler.pubservice.Pub
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.CompletionListener
@@ -8,6 +7,7 @@ import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.PresenceMessage
+import java.util.*
 
 private const val TAG = "RealtimePub"
 
@@ -92,17 +92,15 @@ class RealtimePub(private val ably: AblyRealtime) {
         TODO()
     }
 
-    fun registerToPubUpdates(pub: Pub, updated: (update:PubUpdate) -> Unit) {
-        ably.channels[pub.name].presence.subscribe {
-            Log.d(TAG, "registerToPubUpdates: ${it.action} ${it.clientId}")
-            when(it.action){
+    fun registerToPresenceUpdates(pub: Pub, updated: (update:PubUpdate) -> Unit) {
+        val observedActions = EnumSet.of(PresenceMessage.Action.enter, PresenceMessage.Action.leave)
+        ably.channels[pub.name].presence.subscribe(observedActions){
+            when(it.action) {
                 PresenceMessage.Action.enter -> updated(PubUpdate.Join(PubGoer(it.clientId)))
                 PresenceMessage.Action.leave -> updated(PubUpdate.Leave(PubGoer(it.clientId)))
-                PresenceMessage.Action.absent -> TODO()
-                PresenceMessage.Action.present -> TODO()
-                PresenceMessage.Action.update -> TODO()
             }
         }
+
     }
     fun unRegisterFromPubUpdates(pub: Pub) =  ably.channels[pub.name].presence.unsubscribe()
 }

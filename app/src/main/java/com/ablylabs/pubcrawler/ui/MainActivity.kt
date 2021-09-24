@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
                 when (newState) {
                     BottomSheetBehavior.STATE_EXPANDED -> {
                         //also register for updates
-                        realtimePub.registerToPubUpdates(selectedPub) {
+                        realtimePub.registerToPresenceUpdates(selectedPub) {
                             numberOfPeopleTextView.text =
                                 "${realtimePub.numberOfPeopleInPub(selectedPub)} people here"
                         }
