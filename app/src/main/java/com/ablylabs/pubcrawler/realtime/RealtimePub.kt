@@ -2,12 +2,14 @@ package com.ablylabs.pubcrawler.realtime
 
 import android.util.Log
 import com.ablylabs.pubcrawler.pubservice.Pub
+import com.google.gson.JsonObject
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
+import io.ably.lib.types.MessageExtras
 import io.ably.lib.types.PresenceMessage
 import java.util.*
 
@@ -60,12 +62,14 @@ class RealtimePub(private val ably: AblyRealtime) {
     }
 
     fun sendMessage(
-        who: PubGoer, toWhom: PubGoer, message: String,
+        who: PubGoer, toWhom: PubGoer, messageText: String,
         messageSentResult: (success: Boolean) -> Unit
     ) {
-        val message = Message("hi)message", message)
-        //for now create new channel,
-        ably.channels[setOf(who, toWhom).hashCode().toString()]
+        val message = Message("hi_message", messageText,who.name)
+        //create a unidirectional channel
+        val channelId = listOf(who, toWhom).hashCode().toString()
+        Log.d(TAG, "sendMessage: $channelId")
+        ably.channels[channelId]
             .publish(message, object : CompletionListener {
                 override fun onSuccess() {
                     messageSentResult(true)
@@ -75,6 +79,24 @@ class RealtimePub(private val ably: AblyRealtime) {
                     messageSentResult(false)
                 }
             })
+    }
+
+    fun registerToMessages(pub: Pub, receiver: PubGoer,
+                           messageReceived: (from: PubGoer, message: String) -> Unit) {
+        allPubGoers(pub).forEach {
+            //exclude yourself
+            if (it != receiver){
+                val channelId = listOf(it,receiver).hashCode().toString()
+                Log.d(TAG, "registerToMessages: $channelId")
+                ably.channels[channelId].subscribe("hi_message"){
+                    Log.d(TAG, "registerToMessages: message received")
+                    if (it.data is String) {
+                        val from = PubGoer(it.clientId)
+                        messageReceived(from,it.data as String)
+                    }
+                }
+            }
+        }
     }
 
     fun offerDrink(who: PubGoer, toWhom: PubGoer) {
@@ -100,9 +122,6 @@ class RealtimePub(private val ably: AblyRealtime) {
         return listOf()
     }
 
-    fun registerToMessages(pub: Pub, messageReceived: (pubGoer: PubGoer, message: String) -> Unit) {
-        TODO()
-    }
 
     fun registerToDrinkOffers(pub: Pub, offerReceived: (pubGoer: PubGoer) -> Unit) {
         TODO()

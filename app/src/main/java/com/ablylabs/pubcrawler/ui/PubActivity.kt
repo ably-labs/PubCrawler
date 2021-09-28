@@ -49,13 +49,18 @@ class PubActivity : AppCompatActivity() {
 
     private fun onSayHi(to: PubGoer) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.sendMessage(pubGoer,to,"Hi") {
+        realtimePub.sendMessage(pubGoer, to, "Hi") {
             //Something to check, callback from Ably works on background thread?
             runOnUiThread {
-                if (it){
-                    Toast.makeText(this, "Successfully sent message to ${to.name}", Toast.LENGTH_SHORT).show()
-                }else{
-                    Toast.makeText(this, "Couldn't send message to ${to.name}", Toast.LENGTH_SHORT).show()
+                if (it) {
+                    Toast.makeText(
+                        this,
+                        "Successfully sent message to ${to.name}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(this, "Couldn't send message to ${to.name}", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
         }
@@ -87,7 +92,6 @@ class PubActivity : AppCompatActivity() {
     private fun listPeople(pub: Pub) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
         val allPresent = realtimePub.allPubGoers(pub)
-        Log.d(TAG, "listPeople: ${allPresent.size}")
         peopleAdapter.setPubGoers(allPresent)
         peopleAdapter.notifyDataSetChanged()
     }
@@ -107,10 +111,16 @@ class PubActivity : AppCompatActivity() {
                     }
                 }
                 listPeople(pub)
-            }
 
+                //also register to message updates and offer updates
+                realtimePub.registerToMessages(pub, pubGoer) { from, message ->
+                    runOnUiThread {
+                        Toast.makeText(this, "${from.name} said $message", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
-        //also register to message updates and offer updates
+
     }
 
     private fun someoneJustJoined(
