@@ -7,6 +7,7 @@ import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
+import io.ably.lib.types.Message
 import io.ably.lib.types.PresenceMessage
 import java.util.*
 
@@ -43,7 +44,7 @@ class RealtimePub(private val ably: AblyRealtime) {
         }
     }
 
-    fun leave(who: PubGoer, which: Pub,leaveResult: (success: Boolean) -> Unit ) {
+    fun leave(who: PubGoer, which: Pub, leaveResult: (success: Boolean) -> Unit) {
         ably.channels[which.name].presence.apply {
             leaveClient(who.name, "no_data", object : CompletionListener {
                 override fun onSuccess() {
@@ -58,8 +59,22 @@ class RealtimePub(private val ably: AblyRealtime) {
         }
     }
 
-    fun sendMessage(who: PubGoer, toWhom: PubGoer, message: String) {
-        TODO()
+    fun sendMessage(
+        who: PubGoer, toWhom: PubGoer, message: String,
+        messageSentResult: (success: Boolean) -> Unit
+    ) {
+        val message = Message("hi)message", message)
+        //for now create new channel,
+        ably.channels[setOf(who, toWhom).hashCode().toString()]
+            .publish(message, object : CompletionListener {
+                override fun onSuccess() {
+                    messageSentResult(true)
+                }
+
+                override fun onError(reason: ErrorInfo?) {
+                    messageSentResult(false)
+                }
+            })
     }
 
     fun offerDrink(who: PubGoer, toWhom: PubGoer) {
@@ -78,7 +93,7 @@ class RealtimePub(private val ably: AblyRealtime) {
     fun allPubGoers(which: Pub): List<PubGoer> {
         val messages = ably.channels[which.name].presence.get()
         messages?.let {
-            if (it.isNotEmpty()){
+            if (it.isNotEmpty()) {
                 return it.toList().map { PubGoer(it.clientId) }
             }
         }
@@ -93,16 +108,17 @@ class RealtimePub(private val ably: AblyRealtime) {
         TODO()
     }
 
-    fun registerToPresenceUpdates(pub: Pub, updated: (update:PubUpdate) -> Unit) {
+    fun registerToPresenceUpdates(pub: Pub, updated: (update: PubUpdate) -> Unit) {
         val observedActions = EnumSet.of(PresenceMessage.Action.enter, PresenceMessage.Action.leave)
-        ably.channels[pub.name].presence.subscribe(observedActions){
+        ably.channels[pub.name].presence.subscribe(observedActions) {
             Log.d(TAG, "registerToPresenceUpdates: ${it.action} ${it.clientId}")
-            when(it.action) {
+            when (it.action) {
                 PresenceMessage.Action.enter -> updated(PubUpdate.Join(PubGoer(it.clientId)))
                 PresenceMessage.Action.leave -> updated(PubUpdate.Leave(PubGoer(it.clientId)))
             }
         }
 
     }
-    fun unRegisterFromPubUpdates(pub: Pub) =  ably.channels[pub.name].presence.unsubscribe()
+
+    fun unRegisterFromPubUpdates(pub: Pub) = ably.channels[pub.name].presence.unsubscribe()
 }

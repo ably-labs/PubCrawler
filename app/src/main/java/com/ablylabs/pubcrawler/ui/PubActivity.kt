@@ -48,7 +48,17 @@ class PubActivity : AppCompatActivity() {
     }
 
     private fun onSayHi(to: PubGoer) {
-        Toast.makeText(this, "Say hi to ${to.name}", Toast.LENGTH_SHORT).show()
+        val realtimePub = PubCrawlerApp.instance().realtimePub
+        realtimePub.sendMessage(pubGoer,to,"Hi") {
+            //Something to check, callback from Ably works on background thread?
+            runOnUiThread {
+                if (it){
+                    Toast.makeText(this, "Successfully sent message to ${to.name}", Toast.LENGTH_SHORT).show()
+                }else{
+                    Toast.makeText(this, "Couldn't send message to ${to.name}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun onBuyDrink(to: PubGoer) {

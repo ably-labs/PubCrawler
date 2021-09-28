@@ -1,5 +1,6 @@
 package com.ablylabs.pubcrawler.ui
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
@@ -28,18 +29,24 @@ class PeopleRecylerAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.personTextView.text = people[position].name
-        holder.itemView.setOnClickListener { onSayHi(people[position]) }
-        holder.itemView.setOnClickListener {
-            val popup = PopupMenu(holder.itemView.context, holder.itemView)
-            popup.inflate(R.menu.user_menu)
-            popup.setOnMenuItemClickListener {
-                when (it.itemId) {
-                    R.id.say_hi_item -> onSayHi(people[position])
-                    R.id.buy_drink_item -> onBuyDrink(people[position])
+        checkName(holder.itemView.context) {
+            if (people[position].name != it) {
+                holder.itemView.setOnClickListener { onSayHi(people[position]) }
+                holder.itemView.setOnClickListener {
+                    val popup = PopupMenu(holder.itemView.context, holder.itemView)
+                    popup.inflate(R.menu.user_menu)
+                    popup.setOnMenuItemClickListener {
+                        when (it.itemId) {
+                            R.id.say_hi_item -> onSayHi(people[position])
+                            R.id.buy_drink_item -> onBuyDrink(people[position])
+                        }
+                        true
+                    }
+                    popup.show()
                 }
-                true
+            }else{
+                holder.personTextView.append(" (you)")
             }
-            popup.show()
         }
     }
 
