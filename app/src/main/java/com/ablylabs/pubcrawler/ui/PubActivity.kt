@@ -95,18 +95,22 @@ class PubActivity : AppCompatActivity() {
     private fun registerToUpdates(pub: Pub) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
         realtimePub.registerToPresenceUpdates(pub) {
-            when (it) {
-                is PubUpdate.Join -> {
-                    someoneJustJoined(it.pubGoer)
-                    Log.d(TAG, "${it.pubGoer.name} joined")
+            runOnUiThread {
+                when (it) {
+                    is PubUpdate.Join -> {
+                        someoneJustJoined(it.pubGoer)
+                        Log.d(TAG, "${it.pubGoer.name} joined")
+                    }
+                    is PubUpdate.Leave -> {
+                        someoneJustLeft(it.pubGoer)
+                        Log.d(TAG, "${it.pubGoer.name} left")
+                    }
                 }
-                is PubUpdate.Leave -> {
-                    someoneJustLeft(it.pubGoer)
-                    Log.d(TAG, "${it.pubGoer.name} left")
-                }
+                listPeople(pub)
             }
-            listPeople(pub)
+
         }
+        //also register to message updates and offer updates
     }
 
     private fun someoneJustJoined(
