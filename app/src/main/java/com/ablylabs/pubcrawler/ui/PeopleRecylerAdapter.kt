@@ -10,19 +10,12 @@ import com.ablylabs.pubcrawler.realtime.PubGoer
 
 class PeopleRecylerAdapter : RecyclerView.Adapter<PeopleRecylerAdapter.ViewHolder>() {
     private val people = mutableListOf<PubGoer>()
-
-    fun setPubGoers(list:List<PubGoer>){
+    private lateinit var onTapOnUser : (pubgoer:PubGoer) -> Unit
+    fun setPubGoers(list:List<PubGoer>,onTapOnUser : (pubgoer:PubGoer) -> Unit){
         people.clear()
         people.addAll(list)
+        this.onTapOnUser = onTapOnUser
     }
-    fun add(pubGoer: PubGoer) {
-        people.add(pubGoer)
-    }
-
-    fun remove(pubGoer: PubGoer) {
-        people.remove(pubGoer)
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_pubgoer, parent, false)
@@ -31,6 +24,7 @@ class PeopleRecylerAdapter : RecyclerView.Adapter<PeopleRecylerAdapter.ViewHolde
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.personTextView.text = people[position].name
+        holder.itemView.setOnClickListener { onTapOnUser(people[position]) }
     }
 
     override fun getItemCount() = people.size

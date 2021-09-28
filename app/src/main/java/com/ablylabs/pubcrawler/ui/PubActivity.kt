@@ -70,7 +70,9 @@ class PubActivity : AppCompatActivity() {
         val realtimePub = PubCrawlerApp.instance().realtimePub
         val allPresent = realtimePub.allPubGoers(pub)
         Log.d(TAG, "listPeople: ${allPresent.size}")
-        peopleAdapter.setPubGoers(allPresent)
+        peopleAdapter.setPubGoers(allPresent){
+            Toast.makeText(this,"Show menu for ${it.name}",Toast.LENGTH_SHORT).show()
+        }
         peopleAdapter.notifyDataSetChanged()
     }
 
