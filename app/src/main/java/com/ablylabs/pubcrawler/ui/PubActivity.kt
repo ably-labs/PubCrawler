@@ -15,18 +15,19 @@ import com.ablylabs.pubcrawler.realtime.PubUpdate
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 
+
 private const val TAG = "PubActivity"
 
 class PubActivity : AppCompatActivity() {
     private lateinit var peopleRecyclerView: RecyclerView
-    private lateinit var peopleAdapter:PeopleRecylerAdapter
+    private lateinit var peopleAdapter: PeopleRecylerAdapter
     private lateinit var pub: Pub
     private lateinit var pubGoer: PubGoer
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pub)
         peopleRecyclerView = findViewById(R.id.peopleRecyclerView)
-        peopleAdapter = PeopleRecylerAdapter()
+        peopleAdapter = PeopleRecylerAdapter(this::onSayHi, this::onBuyDrink)
         findViewById<Button>(R.id.leaveButton).setOnClickListener {
             leavePub()
         }
@@ -46,6 +47,14 @@ class PubActivity : AppCompatActivity() {
         }
     }
 
+    private fun onSayHi(to: PubGoer) {
+        Toast.makeText(this, "Say hi to ${to.name}", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun onBuyDrink(to: PubGoer) {
+        Toast.makeText(this, "Offer drink to to ${to.name}", Toast.LENGTH_SHORT).show()
+    }
+
     override fun onPause() {
         super.onPause()
         Log.d(TAG, "onPause: ")
@@ -62,17 +71,14 @@ class PubActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-      leavePub()
+        leavePub()
     }
 
     private fun listPeople(pub: Pub) {
-
         val realtimePub = PubCrawlerApp.instance().realtimePub
         val allPresent = realtimePub.allPubGoers(pub)
         Log.d(TAG, "listPeople: ${allPresent.size}")
-        peopleAdapter.setPubGoers(allPresent){
-            Toast.makeText(this,"Show menu for ${it.name}",Toast.LENGTH_SHORT).show()
-        }
+        peopleAdapter.setPubGoers(allPresent)
         peopleAdapter.notifyDataSetChanged()
     }
 

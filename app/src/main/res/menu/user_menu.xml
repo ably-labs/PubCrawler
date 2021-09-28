@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/say_hi_item" android:title="Say hi" />
+    <item android:id="@+id/buy_drink_item" android:title="Buy a drink" />
+</menu>
