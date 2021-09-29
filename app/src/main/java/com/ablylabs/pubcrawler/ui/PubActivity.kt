@@ -27,7 +27,7 @@ class PubActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pub)
         peopleRecyclerView = findViewById(R.id.peopleRecyclerView)
-        peopleAdapter = PeopleRecylerAdapter(this::onSayHi, this::onBuyDrink)
+        peopleAdapter = PeopleRecylerAdapter(this::sayHiTo, this::onBuyDrink)
         findViewById<Button>(R.id.leaveButton).setOnClickListener {
             leavePub()
         }
@@ -47,9 +47,9 @@ class PubActivity : AppCompatActivity() {
         }
     }
 
-    private fun onSayHi(to: PubGoer) {
+    private fun sayHiTo(to: PubGoer) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.sendMessage(pubGoer, to, "Hi") {
+        realtimePub.sendMessage(pubGoer, to, "Hi \uD83D\uDC4B") {
             //Something to check, callback from Ably works on background thread?
             runOnUiThread {
                 if (it) {
@@ -103,11 +103,9 @@ class PubActivity : AppCompatActivity() {
                 when (it) {
                     is PubUpdate.Join -> {
                         someoneJustJoined(it.pubGoer)
-                        Log.d(TAG, "${it.pubGoer.name} joined")
                     }
                     is PubUpdate.Leave -> {
                         someoneJustLeft(it.pubGoer)
-                        Log.d(TAG, "${it.pubGoer.name} left")
                     }
                 }
                 listPeople(pub)
@@ -115,7 +113,7 @@ class PubActivity : AppCompatActivity() {
                 //also register to message updates and offer updates
                 realtimePub.registerToMessages(pub, pubGoer) { from, message ->
                     runOnUiThread {
-                        Toast.makeText(this, "${from.name} said $message", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "${from.name} : $message", Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -132,7 +130,7 @@ class PubActivity : AppCompatActivity() {
             "${pubGoer.name} joined the pub",
             Snackbar.LENGTH_LONG
         ).setAction(R.string.say_hi) {
-            Toast.makeText(this, "Should say hi to joining user", Toast.LENGTH_SHORT).show()
+            sayHiTo(pubGoer)
         }.show()
     }
 
