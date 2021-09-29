@@ -2,14 +2,12 @@ package com.ablylabs.pubcrawler.realtime
 
 import android.util.Log
 import com.ablylabs.pubcrawler.pubservice.Pub
-import com.google.gson.JsonObject
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.realtime.ConnectionState
 import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
-import io.ably.lib.types.MessageExtras
 import io.ably.lib.types.PresenceMessage
 import java.util.*
 
@@ -66,7 +64,6 @@ class RealtimePub(private val ably: AblyRealtime) {
         messageSentResult: (success: Boolean) -> Unit
     ) {
         val message = Message("hi_message", messageText,who.name)
-        //create a unidirectional channel
         val channelId = listOf(who, toWhom).hashCode().toString()
         Log.d(TAG, "sendMessage: $channelId")
         ably.channels[channelId]
@@ -99,8 +96,21 @@ class RealtimePub(private val ably: AblyRealtime) {
         }
     }
 
-    fun offerDrink(who: PubGoer, toWhom: PubGoer) {
-        TODO()
+    //Most of internals of this function can be shared with 'send message' function.
+    fun offerDrink(who: PubGoer, toWhom: PubGoer,
+                   offerSentResult: (success: Boolean) -> Unit) {
+        val message = Message("offer_drink", "I would like to buy you a drink",who.name)
+        val channelId = listOf(who, toWhom).hashCode().toString()
+        ably.channels[channelId]
+            .publish(message, object : CompletionListener {
+                override fun onSuccess() {
+                    offerSentResult(true)
+                }
+
+                override fun onError(reason: ErrorInfo?) {
+                    offerSentResult(false)
+                }
+            })
     }
 
     fun acceptDrink(who: PubGoer, fromWhom: PubGoer) {

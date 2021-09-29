@@ -67,7 +67,21 @@ class PubActivity : AppCompatActivity() {
     }
 
     private fun onBuyDrink(to: PubGoer) {
-        Toast.makeText(this, "Offer drink to to ${to.name}", Toast.LENGTH_SHORT).show()
+        val realtimePub = PubCrawlerApp.instance().realtimePub
+        realtimePub.offerDrink(pubGoer,to){
+            runOnUiThread {
+                if (it) {
+                    Toast.makeText(
+                        this,
+                        "Successfully sent message to ${to.name}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Toast.makeText(this, "Couldn't send message to ${to.name}", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+        }
     }
 
     override fun onPause() {
