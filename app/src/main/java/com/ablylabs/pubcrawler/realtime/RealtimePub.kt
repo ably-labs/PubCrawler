@@ -14,6 +14,7 @@ import java.util.*
 private const val TAG = "RealtimePub"
 
 class RealtimePub(private val ably: AblyRealtime) {
+
     init {
         ably.connection.on(ConnectionStateListener { state ->
             when (state.current) {
@@ -25,7 +26,6 @@ class RealtimePub(private val ably: AblyRealtime) {
             }
         })
     }
-
     //following two functions might merge later
     fun numberOfPeopleInPub(pub: Pub) = ably.channels[pub.name].presence.get().size
 
@@ -63,7 +63,7 @@ class RealtimePub(private val ably: AblyRealtime) {
         who: PubGoer, toWhom: PubGoer, messageText: String,
         messageSentResult: (success: Boolean) -> Unit
     ) {
-        val message = Message("hi_message", messageText,who.name)
+        val message = Message("hi_message", messageText, who.name)
         val channelId = listOf(who, toWhom).hashCode().toString()
         Log.d(TAG, "sendMessage: $channelId")
         ably.channels[channelId]
@@ -78,28 +78,19 @@ class RealtimePub(private val ably: AblyRealtime) {
             })
     }
 
-    fun registerToMessages(pub: Pub, receiver: PubGoer,
-                           messageReceived: (from: PubGoer, message: String) -> Unit) {
-        allPubGoers(pub).forEach {
-            //exclude yourself
-            if (it != receiver){
-                val channelId = listOf(it,receiver).hashCode().toString()
-                Log.d(TAG, "registerToMessages: $channelId")
-                ably.channels[channelId].subscribe("hi_message"){
-                    Log.d(TAG, "registerToMessages: message received")
-                    if (it.data is String) {
-                        val from = PubGoer(it.clientId)
-                        messageReceived(from,it.data as String)
-                    }
-                }
-            }
-        }
+    fun registerToMessages(
+        pub: Pub, receiver: PubGoer,
+        messageReceived: (from: PubGoer, message: String) -> Unit
+    ) {
+        registerForChannelMessage(pub, receiver, "hi_message", messageReceived)
     }
 
     //Most of internals of this function can be shared with 'send message' function.
-    fun offerDrink(who: PubGoer, toWhom: PubGoer,
-                   offerSentResult: (success: Boolean) -> Unit) {
-        val message = Message("offer_drink", "I would like to buy you a drink",who.name)
+    fun offerDrink(
+        who: PubGoer, toWhom: PubGoer,
+        offerSentResult: (success: Boolean) -> Unit
+    ) {
+        val message = Message("offer_drink", "I would like to buy you a drink", who.name)
         val channelId = listOf(who, toWhom).hashCode().toString()
         ably.channels[channelId]
             .publish(message, object : CompletionListener {
@@ -111,6 +102,30 @@ class RealtimePub(private val ably: AblyRealtime) {
                     offerSentResult(false)
                 }
             })
+    }
+
+    fun registerToDrinkOffers(
+        pub: Pub, receiver: PubGoer,
+        messageReceived: (from: PubGoer, message: String) -> Unit
+    ) {
+        registerForChannelMessage(pub, receiver, "offer_drink", messageReceived)
+    }
+
+    private fun registerForChannelMessage(
+        pub: Pub, receiver: PubGoer, channelName: String,
+        messageReceived: (from: PubGoer, message: String) -> Unit
+    ) {
+        allPubGoers(pub).forEach {
+            if (it != receiver) {
+                val channelId = listOf(it, receiver).hashCode().toString()
+                ably.channels[channelId].subscribe(channelName) {
+                    if (it.data is String) {
+                        val from = PubGoer(it.clientId)
+                        messageReceived(from, it.data as String)
+                    }
+                }
+            }
+        }
     }
 
     fun acceptDrink(who: PubGoer, fromWhom: PubGoer) {
@@ -130,11 +145,6 @@ class RealtimePub(private val ably: AblyRealtime) {
             }
         }
         return listOf()
-    }
-
-
-    fun registerToDrinkOffers(pub: Pub, offerReceived: (pubGoer: PubGoer) -> Unit) {
-        TODO()
     }
 
     fun registerToPresenceUpdates(pub: Pub, updated: (update: PubUpdate) -> Unit) {
