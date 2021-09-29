@@ -27,7 +27,7 @@ class PubActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pub)
         peopleRecyclerView = findViewById(R.id.peopleRecyclerView)
-        peopleAdapter = PeopleRecylerAdapter(this::sayHiTo, this::onBuyDrink)
+        peopleAdapter = PeopleRecylerAdapter(this::sayHiTo, this::offerDrinkTo)
         findViewById<Button>(R.id.leaveButton).setOnClickListener {
             leavePub()
         }
@@ -66,18 +66,18 @@ class PubActivity : AppCompatActivity() {
         }
     }
 
-    private fun onBuyDrink(to: PubGoer) {
+    private fun offerDrinkTo(to: PubGoer) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
         realtimePub.offerDrink(pubGoer,to){
             runOnUiThread {
                 if (it) {
                     Toast.makeText(
                         this,
-                        "Successfully sent message to ${to.name}",
+                        "Successfully offered drink to ${to.name}",
                         Toast.LENGTH_SHORT
                     ).show()
                 } else {
-                    Toast.makeText(this, "Couldn't send message to ${to.name}", Toast.LENGTH_SHORT)
+                    Toast.makeText(this, "Couldn't offer drink to ${to.name}", Toast.LENGTH_SHORT)
                         .show()
                 }
             }
