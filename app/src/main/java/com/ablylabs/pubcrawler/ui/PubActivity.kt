@@ -130,6 +130,10 @@ class PubActivity : AppCompatActivity() {
                         Toast.makeText(this, "${from.name} : $message", Toast.LENGTH_LONG).show()
                     }
                 }
+                //register to drink offers
+              realtimePub.registerToDrinkOffers(pub,pubGoer){
+
+              }
             }
         }
     }

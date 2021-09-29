@@ -26,6 +26,7 @@ class RealtimePub(private val ably: AblyRealtime) {
             }
         })
     }
+
     //following two functions might merge later
     fun numberOfPeopleInPub(pub: Pub) = ably.channels[pub.name].presence.get().size
 
@@ -59,13 +60,15 @@ class RealtimePub(private val ably: AblyRealtime) {
         }
     }
 
-    fun sendMessage(
-        who: PubGoer, toWhom: PubGoer, messageText: String,
+    private fun sendUnidirectionalMessage(
+        who: PubGoer,
+        toWhom: PubGoer,
+        messageName: String,
+        messageText: String,
         messageSentResult: (success: Boolean) -> Unit
     ) {
-        val message = Message("hi_message", messageText, who.name)
+        val message = Message(messageName, messageText, who.name)
         val channelId = listOf(who, toWhom).hashCode().toString()
-        Log.d(TAG, "sendMessage: $channelId")
         ably.channels[channelId]
             .publish(message, object : CompletionListener {
                 override fun onSuccess() {
@@ -76,6 +79,18 @@ class RealtimePub(private val ably: AblyRealtime) {
                     messageSentResult(false)
                 }
             })
+    }
+
+    fun sendMessage(
+        who: PubGoer, toWhom: PubGoer, messageText: String,
+        messageSentResult: (success: Boolean) -> Unit
+    ) {
+        sendUnidirectionalMessage(
+            who,
+            toWhom,
+            "hi_message",
+            messageText, messageSentResult
+        )
     }
 
     fun registerToMessages(
@@ -90,25 +105,22 @@ class RealtimePub(private val ably: AblyRealtime) {
         who: PubGoer, toWhom: PubGoer,
         offerSentResult: (success: Boolean) -> Unit
     ) {
-        val message = Message("offer_drink", "I would like to buy you a drink", who.name)
-        val channelId = listOf(who, toWhom).hashCode().toString()
-        ably.channels[channelId]
-            .publish(message, object : CompletionListener {
-                override fun onSuccess() {
-                    offerSentResult(true)
-                }
-
-                override fun onError(reason: ErrorInfo?) {
-                    offerSentResult(false)
-                }
-            })
+        sendUnidirectionalMessage(
+            who,
+            toWhom,
+            "hi_message",
+            "offer_drink",
+            offerSentResult
+        )
     }
 
     fun registerToDrinkOffers(
         pub: Pub, receiver: PubGoer,
-        messageReceived: (from: PubGoer, message: String) -> Unit
+        offerReceived: (from: PubGoer) -> Unit
     ) {
-        registerForChannelMessage(pub, receiver, "offer_drink", messageReceived)
+        registerForChannelMessage(pub, receiver, "offer_drink"){from: PubGoer, message: String ->
+            offerReceived(from)
+        }
     }
 
     private fun registerForChannelMessage(
