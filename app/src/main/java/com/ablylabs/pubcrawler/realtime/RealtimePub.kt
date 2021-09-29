@@ -118,7 +118,7 @@ class RealtimePub(private val ably: AblyRealtime) {
         pub: Pub, receiver: PubGoer,
         offerReceived: (from: PubGoer) -> Unit
     ) {
-        registerForChannelMessage(pub, receiver, "offer_drink"){from: PubGoer, message: String ->
+        registerForChannelMessage(pub, receiver, "offer_drink") { from: PubGoer, message: String ->
             offerReceived(from)
         }
     }
@@ -140,12 +140,25 @@ class RealtimePub(private val ably: AblyRealtime) {
         }
     }
 
-    fun acceptDrink(who: PubGoer, fromWhom: PubGoer) {
-        TODO()
+    fun acceptDrink(
+        who: PubGoer, fromWhom: PubGoer,
+        acceptResult: (success: Boolean) -> Unit
+    ) {
+        sendUnidirectionalMessage(
+            who, fromWhom,
+            "drink_accept", "Merci", acceptResult
+        )
+
     }
 
-    fun rejectDrink(who: PubGoer, fromWhom: PubGoer) {
-        TODO()
+    fun rejectDrink(
+        who: PubGoer, fromWhom: PubGoer,
+        rejectResult: (success: Boolean) -> Unit
+    ) {
+        sendUnidirectionalMessage(
+            who, fromWhom,
+            "drink_reject", "No thanks", rejectResult
+        )
     }
 
     //all pubgoers in a pub

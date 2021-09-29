@@ -12,6 +12,7 @@ import com.ablylabs.pubcrawler.R
 import com.ablylabs.pubcrawler.pubservice.Pub
 import com.ablylabs.pubcrawler.realtime.PubGoer
 import com.ablylabs.pubcrawler.realtime.PubUpdate
+import com.afollestad.materialdialogs.MaterialDialog
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 
@@ -68,7 +69,7 @@ class PubActivity : AppCompatActivity() {
 
     private fun offerDrinkTo(to: PubGoer) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.offerDrink(pubGoer,to){
+        realtimePub.offerDrink(pubGoer, to) {
             runOnUiThread {
                 if (it) {
                     Toast.makeText(
@@ -122,6 +123,7 @@ class PubActivity : AppCompatActivity() {
                         someoneJustLeft(it.pubGoer)
                     }
                 }
+
                 listPeople(pub)
 
                 //also register to message updates and offer updates
@@ -131,9 +133,19 @@ class PubActivity : AppCompatActivity() {
                     }
                 }
                 //register to drink offers
-              realtimePub.registerToDrinkOffers(pub,pubGoer){
-
-              }
+                realtimePub.registerToDrinkOffers(pub, pubGoer) {from->
+                    showDrinkOfferDialog(this, from) {accept->
+                       if (accept){
+                           realtimePub.acceptDrink(pubGoer,from){
+                               Toast.makeText(this, "Accept received", Toast.LENGTH_LONG).show()
+                           }
+                       }else{
+                           realtimePub.rejectDrink(pubGoer,from){
+                               Toast.makeText(this, "Reject received", Toast.LENGTH_LONG).show()
+                           }
+                       }
+                    }
+                }
             }
         }
     }

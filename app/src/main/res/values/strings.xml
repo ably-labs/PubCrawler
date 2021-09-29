@@ -5,4 +5,7 @@
     <string name="your_name">Who are you?</string>
     <string name="say_hi">Say hi!</string>
     <string name="leave">Leave</string>
+    <string name="new_drink_offer">New drink offer</string>
+    <string name="yes_please">Yes please</string>
+    <string name="no_thanks">No thanks!</string>
 </resources>
