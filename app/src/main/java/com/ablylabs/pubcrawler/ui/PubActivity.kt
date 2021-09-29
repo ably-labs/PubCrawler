@@ -118,7 +118,6 @@ class PubActivity : AppCompatActivity() {
                 }
             }
         }
-
     }
 
     private fun someoneJustJoined(
