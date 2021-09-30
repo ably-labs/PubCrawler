@@ -70,8 +70,18 @@ class PubActivity : AppCompatActivity() {
 
     private fun offerDrinkTo(to: PubGoer) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.offerDrink(pubGoer, to) {
-            runOnUiThread {
+        realtimePub.offerDrink(pubGoer, to) {success->
+            //switch actors
+            realtimePub.registerToDrinkOfferResponse(to,pubGoer) { accept ->
+                runOnUiThread {
+                    if (accept) {
+                        Toast.makeText(this, "${to.name} accepted your drink offer", Toast.LENGTH_LONG)
+                    } else {
+                        Toast.makeText(this, "${to.name} rejected your drink offer", Toast.LENGTH_LONG)
+                    }
+                }
+            }
+        /*    runOnUiThread {
                 if (it) {
                     Toast.makeText(
                         this,
@@ -82,7 +92,7 @@ class PubActivity : AppCompatActivity() {
                     Toast.makeText(this, "Couldn't offer drink to ${to.name}", Toast.LENGTH_SHORT)
                         .show()
                 }
-            }
+            }*/
         }
     }
 
@@ -130,39 +140,30 @@ class PubActivity : AppCompatActivity() {
         }
     }
 
-    private fun registerToPubActivities(){
-       val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.registerToMessages(pub, pubGoer) { from, message ->
+    private fun registerToPubActivities() {
+        val realtimePub = PubCrawlerApp.instance().realtimePub
+        realtimePub.registerToTextMessage(pub, pubGoer) { from, message ->
             runOnUiThread {
                 Toast.makeText(this, "${from.name} : $message", Toast.LENGTH_LONG).show()
             }
         }
-        realtimePub.registerToDrinkOffers(pub, pubGoer) {from->
+        realtimePub.registerToDrinkOffers(pub, pubGoer) { from ->
             runOnUiThread {
-                showDrinkOfferDialog(this, from) {accept->
-                    if (accept){
-                        realtimePub.acceptDrink(pubGoer,from){
+                showDrinkOfferDialog(this, from) { accept ->
+                    if (accept) {
+                        realtimePub.acceptDrink(pubGoer, from) {
                             Toast.makeText(this, "Accept received", Toast.LENGTH_LONG).show()
                         }
-                    }else{
-                        realtimePub.rejectDrink(pubGoer,from){
+                    } else {
+                        realtimePub.rejectDrink(pubGoer, from) {
                             Toast.makeText(this, "Reject received", Toast.LENGTH_LONG).show()
                         }
                     }
-            }
+                }
 
             }
         }
 
-        //register to drink offer responses
-        realtimePub.registerToDrinkOfferResponses(pub,pubGoer){accept->
-            if (accept){
-                Toast.makeText(this,"Someone accepted your drink offer",Toast.LENGTH_LONG)
-            }else{
-                Toast.makeText(this,"Someone rejected your drink offer",Toast.LENGTH_LONG)
-            }
-
-        }
     }
 
     private fun someoneJustJoined(

@@ -4,8 +4,6 @@ import android.util.Log
 import com.ablylabs.pubcrawler.pubservice.Pub
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.CompletionListener
-import io.ably.lib.realtime.ConnectionState
-import io.ably.lib.realtime.ConnectionStateListener
 import io.ably.lib.types.ErrorInfo
 import io.ably.lib.types.Message
 import io.ably.lib.types.PresenceMessage
@@ -54,16 +52,13 @@ class RealtimePub(private val ably: AblyRealtime) {
         messageText: String,
         messageSentResult: (success: Boolean) -> Unit
     ) {
-        //make sure you are making a disti
         val message = Message(messageName, messageText, who.name)
         val channelId = listOf(who, toWhom).hashCode().toString()
-        Log.d(TAG, "sendUnidirectionalMessage: $channelId")
         ably.channels[channelId]
             .publish(message, object : CompletionListener {
                 override fun onSuccess() {
                     messageSentResult(true)
                 }
-
                 override fun onError(reason: ErrorInfo?) {
                     messageSentResult(false)
                 }
@@ -83,7 +78,7 @@ class RealtimePub(private val ably: AblyRealtime) {
         )
     }
 
-    fun registerToMessages(
+    fun registerToTextMessage(
         pub: Pub, receiver: PubGoer,
         messageReceived: (from: PubGoer, message: String) -> Unit
     ) {
@@ -107,21 +102,21 @@ class RealtimePub(private val ably: AblyRealtime) {
         pub: Pub, receiver: PubGoer,
         offerReceived: (from: PubGoer) -> Unit
     ) {
-
         registerForChannelMessage(pub, receiver, OFFER_DRINK) { from: PubGoer, message: String ->
             offerReceived(from)
         }
     }
 
-    fun registerToDrinkOfferResponses(
-        pub: Pub, receiver: PubGoer,
+    fun registerToDrinkOfferResponse(
+        from: PubGoer, to: PubGoer,
         acceptResult: (success: Boolean) -> Unit
     ) {
-
-        registerForChannelMessage(pub, receiver, ACCEPT_DRINK) { from: PubGoer, message: String ->
+        //check if you are able to subscribed to multiple channels
+        val channelId = listOf(from, to).hashCode().toString()
+        ably.channels[channelId].subscribe(ACCEPT_DRINK) {
             acceptResult(true)
         }
-        registerForChannelMessage(pub, receiver, REJECT_DRINK) { from: PubGoer, message: String ->
+        ably.channels[channelId].subscribe(REJECT_DRINK) {
             acceptResult(false)
         }
     }
@@ -135,9 +130,8 @@ class RealtimePub(private val ably: AblyRealtime) {
             .forEach { from ->
                 val channelId = listOf(from, receiver).hashCode().toString()
                 ably.channels[channelId].subscribe(messageName) {
-                    Log.d(TAG, "message received: $channelId $messageName")
                     val from = PubGoer(it.clientId)
-                    messageReceived(from, it.name)
+                    messageReceived(from, it.data as String)
                 }
             }
     }
