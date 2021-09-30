@@ -146,6 +146,16 @@ class PubActivity : AppCompatActivity() {
                        }
                     }
                 }
+
+                //register to drink offer responses
+                realtimePub.registerToDrinkOfferResponses(pub,pubGoer){accept->
+                    if (accept){
+                        Toast.makeText(this,"Someone accepted your drink offer",Toast.LENGTH_LONG)
+                    }else{
+                        Toast.makeText(this,"Someone rejected your drink offer",Toast.LENGTH_LONG)
+                    }
+
+                }
             }
         }
     }

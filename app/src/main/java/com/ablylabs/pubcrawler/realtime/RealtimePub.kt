@@ -67,7 +67,8 @@ class RealtimePub(private val ably: AblyRealtime) {
         messageText: String,
         messageSentResult: (success: Boolean) -> Unit
     ) {
-        val message = Message(messageName, messageText, who.name)
+        //make sure you are making a disti
+        val message = Message(messageName, messageText,who.name)
         val channelId = listOf(who, toWhom).hashCode().toString()
         ably.channels[channelId]
             .publish(message, object : CompletionListener {
@@ -88,8 +89,9 @@ class RealtimePub(private val ably: AblyRealtime) {
         sendUnidirectionalMessage(
             who,
             toWhom,
-            "hi_message",
-            messageText, messageSentResult
+            TEXT_MESSAGE,
+            messageText,
+            messageSentResult
         )
     }
 
@@ -97,7 +99,7 @@ class RealtimePub(private val ably: AblyRealtime) {
         pub: Pub, receiver: PubGoer,
         messageReceived: (from: PubGoer, message: String) -> Unit
     ) {
-        registerForChannelMessage(pub, receiver, "hi_message", messageReceived)
+        registerForChannelMessage(pub, receiver, TEXT_MESSAGE, messageReceived)
     }
 
     //Most of internals of this function can be shared with 'send message' function.
@@ -108,8 +110,8 @@ class RealtimePub(private val ably: AblyRealtime) {
         sendUnidirectionalMessage(
             who,
             toWhom,
-            "hi_message",
-            "offer_drink",
+            OFFER_DRINK,
+            "Here, a pint for you!",
             offerSentResult
         )
     }
@@ -118,19 +120,33 @@ class RealtimePub(private val ably: AblyRealtime) {
         pub: Pub, receiver: PubGoer,
         offerReceived: (from: PubGoer) -> Unit
     ) {
-        registerForChannelMessage(pub, receiver, "offer_drink") { from: PubGoer, message: String ->
+        registerForChannelMessage(pub, receiver, OFFER_DRINK) { from: PubGoer, message: String ->
             offerReceived(from)
         }
     }
 
+    fun registerToDrinkOfferResponses(
+        pub: Pub, receiver: PubGoer,
+        acceptResult: (success: Boolean) -> Unit
+    ) {
+
+        registerForChannelMessage(pub, receiver, ACCEPT_DRINK) { from: PubGoer, message: String ->
+           acceptResult(true)
+        }
+        registerForChannelMessage(pub, receiver, REJECT_DRINK) { from: PubGoer, message: String ->
+            acceptResult(false)
+        }
+    }
+
     private fun registerForChannelMessage(
-        pub: Pub, receiver: PubGoer, channelName: String,
+        pub: Pub, receiver: PubGoer, messageName: String,
         messageReceived: (from: PubGoer, message: String) -> Unit
     ) {
-        allPubGoers(pub).forEach {
-            if (it != receiver) {
-                val channelId = listOf(it, receiver).hashCode().toString()
-                ably.channels[channelId].subscribe(channelName) {
+        allPubGoers(pub)
+            .forEach {from->
+            if (from != receiver) {
+                val channelId = listOf(from, receiver).hashCode().toString()
+                ably.channels[channelId].subscribe(messageName) {
                     if (it.data is String) {
                         val from = PubGoer(it.clientId)
                         messageReceived(from, it.data as String)
@@ -146,7 +162,7 @@ class RealtimePub(private val ably: AblyRealtime) {
     ) {
         sendUnidirectionalMessage(
             who, fromWhom,
-            "drink_accept", "Merci", acceptResult
+            ACCEPT_DRINK, "Merci", acceptResult
         )
 
     }
@@ -157,7 +173,7 @@ class RealtimePub(private val ably: AblyRealtime) {
     ) {
         sendUnidirectionalMessage(
             who, fromWhom,
-            "drink_reject", "No thanks", rejectResult
+            REJECT_DRINK, "No thanks", rejectResult
         )
     }
 
@@ -185,4 +201,11 @@ class RealtimePub(private val ably: AblyRealtime) {
     }
 
     fun unRegisterFromPubUpdates(pub: Pub) = ably.channels[pub.name].presence.unsubscribe()
+
+    companion object{
+        val TEXT_MESSAGE = "text_message"
+        val OFFER_DRINK = "offer_drink"
+        val ACCEPT_DRINK = "accept_drink"
+        val REJECT_DRINK = "reject_drink"
+    }
 }
