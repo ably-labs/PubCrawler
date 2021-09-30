@@ -15,19 +15,6 @@ private const val TAG = "RealtimePub"
 
 class RealtimePub(private val ably: AblyRealtime) {
 
-    init {
-        ably.connection.on(ConnectionStateListener { state ->
-            when (state.current) {
-                ConnectionState.connected -> {
-                    //connected
-                }
-                ConnectionState.failed -> {
-                }
-            }
-        })
-    }
-
-    //following two functions might merge later
     fun numberOfPeopleInPub(pub: Pub) = ably.channels[pub.name].presence.get().size
 
     fun join(who: PubGoer, which: Pub, joinResult: (success: Boolean) -> Unit) {
