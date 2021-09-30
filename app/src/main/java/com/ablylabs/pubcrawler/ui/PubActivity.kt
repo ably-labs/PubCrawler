@@ -12,7 +12,6 @@ import com.ablylabs.pubcrawler.R
 import com.ablylabs.pubcrawler.pubservice.Pub
 import com.ablylabs.pubcrawler.realtime.PubGoer
 import com.ablylabs.pubcrawler.realtime.PubUpdate
-import com.afollestad.materialdialogs.MaterialDialog
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 
@@ -40,17 +39,19 @@ class PubActivity : AppCompatActivity() {
                 supportActionBar?.subtitle = "${realtimePub.numberOfPeopleInPub(pub)} people here"
                 peopleRecyclerView.adapter = peopleAdapter
                 listPeople(pub)
-                registerToUpdates(pub)
+                registerToPresenceUpdates(pub)
+
             }
             bundle.getString(EXTRA_PUBGOER_JSON)?.let {
                 pubGoer = Gson().fromJson(it, PubGoer::class.java)
+                registerToPubActivities()
             }
         }
     }
 
     private fun sayHiTo(to: PubGoer) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.sendMessage(pubGoer, to, "Hi \uD83D\uDC4B") {
+        realtimePub.sendTextMessage(pubGoer, to, "Hi \uD83D\uDC4B") {
             //Something to check, callback from Ably works on background thread?
             runOnUiThread {
                 if (it) {
@@ -111,7 +112,7 @@ class PubActivity : AppCompatActivity() {
         peopleAdapter.notifyDataSetChanged()
     }
 
-    private fun registerToUpdates(pub: Pub) {
+    private fun registerToPresenceUpdates(pub: Pub) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
         realtimePub.registerToPresenceUpdates(pub) {
             runOnUiThread {
@@ -125,38 +126,42 @@ class PubActivity : AppCompatActivity() {
                 }
 
                 listPeople(pub)
-
-                //also register to message updates and offer updates
-                realtimePub.registerToMessages(pub, pubGoer) { from, message ->
-                    runOnUiThread {
-                        Toast.makeText(this, "${from.name} : $message", Toast.LENGTH_LONG).show()
-                    }
-                }
-                //register to drink offers
-                realtimePub.registerToDrinkOffers(pub, pubGoer) {from->
-                    showDrinkOfferDialog(this, from) {accept->
-                       if (accept){
-                           realtimePub.acceptDrink(pubGoer,from){
-                               Toast.makeText(this, "Accept received", Toast.LENGTH_LONG).show()
-                           }
-                       }else{
-                           realtimePub.rejectDrink(pubGoer,from){
-                               Toast.makeText(this, "Reject received", Toast.LENGTH_LONG).show()
-                           }
-                       }
-                    }
-                }
-
-                //register to drink offer responses
-                realtimePub.registerToDrinkOfferResponses(pub,pubGoer){accept->
-                    if (accept){
-                        Toast.makeText(this,"Someone accepted your drink offer",Toast.LENGTH_LONG)
-                    }else{
-                        Toast.makeText(this,"Someone rejected your drink offer",Toast.LENGTH_LONG)
-                    }
-
-                }
             }
+        }
+    }
+
+    private fun registerToPubActivities(){
+       val realtimePub = PubCrawlerApp.instance().realtimePub
+        realtimePub.registerToMessages(pub, pubGoer) { from, message ->
+            runOnUiThread {
+                Toast.makeText(this, "${from.name} : $message", Toast.LENGTH_LONG).show()
+            }
+        }
+        realtimePub.registerToDrinkOffers(pub, pubGoer) {from->
+            runOnUiThread {
+                showDrinkOfferDialog(this, from) {accept->
+                    if (accept){
+                        realtimePub.acceptDrink(pubGoer,from){
+                            Toast.makeText(this, "Accept received", Toast.LENGTH_LONG).show()
+                        }
+                    }else{
+                        realtimePub.rejectDrink(pubGoer,from){
+                            Toast.makeText(this, "Reject received", Toast.LENGTH_LONG).show()
+                        }
+                    }
+            }
+
+            }
+        }
+
+        //register to drink offer responses
+        realtimePub.registerToDrinkOfferResponses(pub,pubGoer){accept->
+            if (accept){
+                Toast.makeText(this,"Someone accepted your drink offer",Toast.LENGTH_LONG)
+            }else{
+                Toast.makeText(this,"Someone rejected your drink offer",Toast.LENGTH_LONG)
+            }
+
         }
     }
 
