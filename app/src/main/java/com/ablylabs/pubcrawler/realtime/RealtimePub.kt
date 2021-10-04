@@ -1,7 +1,7 @@
 package com.ablylabs.pubcrawler.realtime
 
 import android.util.Log
-import com.ablylabs.pubcrawler.pubservice.Pub
+import com.ablylabs.pubcrawler.pubs.Pub
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.ErrorInfo

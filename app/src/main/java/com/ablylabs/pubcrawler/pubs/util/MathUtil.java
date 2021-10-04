@@ -1,4 +1,4 @@
-package com.ablylabs.pubcrawler.pubservice.util;
+package com.ablylabs.pubcrawler.pubs.util;
 
 
 class MathUtil {

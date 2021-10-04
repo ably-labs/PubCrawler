@@ -1,4 +1,4 @@
-package com.ablylabs.pubcrawler.pubservice.geo;
+package com.ablylabs.pubcrawler.pubs.geo;
 
 //this is an interface for all locations
 public interface LocationItem {

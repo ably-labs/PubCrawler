@@ -1,7 +1,6 @@
 package com.ablylabs.pubcrawler.ui
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.Toast
@@ -9,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.ablylabs.pubcrawler.PubCrawlerApp
 import com.ablylabs.pubcrawler.R
-import com.ablylabs.pubcrawler.pubservice.Pub
+import com.ablylabs.pubcrawler.pubs.Pub
 import com.ablylabs.pubcrawler.realtime.PubGoer
 import com.ablylabs.pubcrawler.realtime.PubUpdate
 import com.ablylabs.pubcrawler.realtime.RealtimePub

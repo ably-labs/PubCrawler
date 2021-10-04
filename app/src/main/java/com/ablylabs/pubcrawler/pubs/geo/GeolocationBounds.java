@@ -1,4 +1,4 @@
-package com.ablylabs.pubcrawler.pubservice.geo;
+package com.ablylabs.pubcrawler.pubs.geo;
 
 
 public class GeolocationBounds {

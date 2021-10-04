@@ -1,7 +1,7 @@
-package com.ablylabs.pubcrawler.pubservice
+package com.ablylabs.pubcrawler.pubs
 
-import com.ablylabs.pubcrawler.pubservice.geo.Geolocation
-import com.ablylabs.pubcrawler.pubservice.geo.LocationItem
+import com.ablylabs.pubcrawler.pubs.geo.Geolocation
+import com.ablylabs.pubcrawler.pubs.geo.LocationItem
 import com.google.gson.annotations.SerializedName
 
 data class Pub(

@@ -1,8 +1,8 @@
-package com.ablylabs.pubcrawler.pubservice.util;
+package com.ablylabs.pubcrawler.pubs.util;
 
 
-import com.ablylabs.pubcrawler.pubservice.geo.Geolocation;
-import com.ablylabs.pubcrawler.pubservice.geo.GeolocationBounds;
+import com.ablylabs.pubcrawler.pubs.geo.Geolocation;
+import com.ablylabs.pubcrawler.pubs.geo.GeolocationBounds;
 
 public class MapUtil {
 

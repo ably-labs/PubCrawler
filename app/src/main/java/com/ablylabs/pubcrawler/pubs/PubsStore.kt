@@ -1,8 +1,8 @@
-package com.ablylabs.pubcrawler.pubservice
+package com.ablylabs.pubcrawler.pubs
 
-import com.ablylabs.pubcrawler.pubservice.geo.GeoPoint
-import com.ablylabs.pubcrawler.pubservice.geo.Geolocation
-import com.ablylabs.pubcrawler.pubservice.geo.GeolocationTree
+import com.ablylabs.pubcrawler.pubs.geo.GeoPoint
+import com.ablylabs.pubcrawler.pubs.geo.Geolocation
+import com.ablylabs.pubcrawler.pubs.geo.GeolocationTree
 import com.google.gson.Gson
 import com.google.gson.stream.JsonReader
 

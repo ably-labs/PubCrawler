@@ -1,8 +1,8 @@
-package com.ablylabs.pubcrawler.pubservice.util;
+package com.ablylabs.pubcrawler.pubs.util;
 
 
 
-import com.ablylabs.pubcrawler.pubservice.geo.Geolocation;
+import com.ablylabs.pubcrawler.pubs.geo.Geolocation;
 
 import java.util.Iterator;
 import java.util.List;

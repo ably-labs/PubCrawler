@@ -9,8 +9,8 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.ablylabs.pubcrawler.PubCrawlerApp
 import com.ablylabs.pubcrawler.R
-import com.ablylabs.pubcrawler.pubservice.Pub
-import com.ablylabs.pubcrawler.pubservice.PubsStore
+import com.ablylabs.pubcrawler.pubs.Pub
+import com.ablylabs.pubcrawler.pubs.PubsStore
 import com.ablylabs.pubcrawler.realtime.PubGoer
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap

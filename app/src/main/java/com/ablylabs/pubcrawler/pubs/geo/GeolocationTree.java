@@ -1,6 +1,6 @@
-package com.ablylabs.pubcrawler.pubservice.geo;
+package com.ablylabs.pubcrawler.pubs.geo;
 
-import com.ablylabs.pubcrawler.pubservice.util.MapUtil;
+import com.ablylabs.pubcrawler.pubs.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
