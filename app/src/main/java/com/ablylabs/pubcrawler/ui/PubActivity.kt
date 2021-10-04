@@ -12,6 +12,7 @@ import com.ablylabs.pubcrawler.R
 import com.ablylabs.pubcrawler.pubservice.Pub
 import com.ablylabs.pubcrawler.realtime.PubGoer
 import com.ablylabs.pubcrawler.realtime.PubUpdate
+import com.ablylabs.pubcrawler.realtime.RealtimePub
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 
@@ -70,21 +71,11 @@ class PubActivity : AppCompatActivity() {
 
     private fun offerDrinkTo(to: PubGoer) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.offerDrink(pubGoer, to) {success->
-            Toast.makeText(this, "Successfully offered drink to ${to.name}", Toast.LENGTH_SHORT).show()
-
-            //switch actors
-            realtimePub.registerToDrinkOfferResponse(to,pubGoer) { accept ->
-                runOnUiThread {
-                    if (accept) {
-                        Toast.makeText(this, "${to.name} accepted your drink offer", Toast.LENGTH_LONG)
-                    } else {
-                        Toast.makeText(this, "${to.name} rejected your drink offer", Toast.LENGTH_LONG)
-                    }
-                }
-            }
-        /*    runOnUiThread {
-                if (it) {
+        realtimePub.offerDrink(pubGoer, to) { success ->
+            runOnUiThread {
+                if (success) {
+                    //switch actors
+                    registerForOfferResponse(realtimePub, to)
                     Toast.makeText(
                         this,
                         "Successfully offered drink to ${to.name}",
@@ -94,13 +85,25 @@ class PubActivity : AppCompatActivity() {
                     Toast.makeText(this, "Couldn't offer drink to ${to.name}", Toast.LENGTH_SHORT)
                         .show()
                 }
-            }*/
+            }
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        Log.d(TAG, "onPause: ")
+    private fun registerForOfferResponse(
+        realtimePub: RealtimePub,
+        to: PubGoer
+    ) {
+        realtimePub.registerToDrinkOfferResponse(to, pubGoer) { accept ->
+            runOnUiThread {
+                if (accept) {
+                    Toast.makeText(this, "${to.name} :  Cheers \n" +
+                            "\uD83C\uDF7B", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(this, "${to.name}: Too drunk, thank you \n" +
+                            "\uD83E\uDD74", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     private fun leavePub() {
