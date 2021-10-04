@@ -13,6 +13,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PubCrawler">
         <activity
+            android:name=".ui.SearchPubActivity"
+            android:exported="true" />
+        <activity
             android:name=".ui.PubActivity"
             android:exported="true" />
 

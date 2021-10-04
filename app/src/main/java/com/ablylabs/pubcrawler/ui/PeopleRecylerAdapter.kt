@@ -52,11 +52,6 @@ class PeopleRecylerAdapter(
 
     override fun getItemCount() = people.size
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val personTextView: TextView
-
-        init {
-            personTextView = view.findViewById(R.id.personTextView)
-
-        }
+        val personTextView: TextView = view.findViewById(R.id.personTextView)
     }
 }

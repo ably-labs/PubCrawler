@@ -29,7 +29,7 @@ class PubsStore (private val locationTree: GeolocationTree,
         }
     }
     fun searchForPubs(keyword:String):PubsResult{
-        val pubs = searchTree.search(keyword)
+        val pubs = searchTree.search(keyword.uppercase())
         if (pubs.isNotEmpty()){
             return PubsResult.PubsFound(pubs)
         }else{
