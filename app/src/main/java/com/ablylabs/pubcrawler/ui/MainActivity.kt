@@ -145,13 +145,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
             val later = System.currentTimeMillis()
             Log.d(TAG, "Nearby computation time ${later-now}ms")
             when (result) {
-                is PubsStore.NearestPubsResult.PubsFound -> {
+                is PubsStore.PubsResult.PubsFound -> {
                     result.pubs.apply {
                         drawPubMarkers(this)
                     }
                 }
-                is PubsStore.NearestPubsResult.Error -> TODO()
-                PubsStore.NearestPubsResult.NoPubs -> TODO()
+                is PubsStore.PubsResult.Error -> TODO()
+                PubsStore.PubsResult.NoPubs -> TODO()
             }
         }
     }

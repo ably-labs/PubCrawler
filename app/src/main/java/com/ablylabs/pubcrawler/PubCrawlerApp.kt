@@ -3,6 +3,7 @@ package com.ablylabs.pubcrawler
 import android.app.Application
 import com.ablylabs.pubcrawler.pubs.PubsStore
 import com.ablylabs.pubcrawler.pubs.geo.GeolocationTree
+import com.ablylabs.pubcrawler.pubs.search.TernarySearchTree
 import com.ablylabs.pubcrawler.realtime.RealtimePub
 import io.ably.lib.realtime.AblyRealtime
 
@@ -17,7 +18,7 @@ class PubCrawlerApp : Application() {
         instance = this
         realtimePub = RealtimePub(AblyRealtime(getString(R.string.ably_key)))
         val inputStream = resources.openRawResource(R.raw.pubs)
-        pubsStore = PubsStore(GeolocationTree(), inputStream)
+        pubsStore = PubsStore(GeolocationTree(), TernarySearchTree(), inputStream)
     }
 
     companion object {
