@@ -71,6 +71,8 @@ class PubActivity : AppCompatActivity() {
     private fun offerDrinkTo(to: PubGoer) {
         val realtimePub = PubCrawlerApp.instance().realtimePub
         realtimePub.offerDrink(pubGoer, to) {success->
+            Toast.makeText(this, "Successfully offered drink to ${to.name}", Toast.LENGTH_SHORT).show()
+
             //switch actors
             realtimePub.registerToDrinkOfferResponse(to,pubGoer) { accept ->
                 runOnUiThread {
@@ -177,6 +179,7 @@ class PubActivity : AppCompatActivity() {
         ).setAction(R.string.say_hi) {
             sayHiTo(pubGoer)
         }.show()
+        registerToPubActivities()
     }
 
     private fun someoneJustLeft(
@@ -188,6 +191,7 @@ class PubActivity : AppCompatActivity() {
             "${pubGoer.name} left the pub",
             Snackbar.LENGTH_SHORT
         ).show()
+        registerToPubActivities()
     }
 
     companion object {

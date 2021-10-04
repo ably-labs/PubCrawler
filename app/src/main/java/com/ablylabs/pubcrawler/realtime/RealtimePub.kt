@@ -70,11 +70,11 @@ class RealtimePub(private val ably: AblyRealtime) {
         messageSentResult: (success: Boolean) -> Unit
     ) {
         sendUnidirectionalMessage(
-            who,
-            toWhom,
-            TEXT_MESSAGE,
-            messageText,
-            messageSentResult
+            who=who,
+            toWhom = toWhom,
+            messageName = TEXT_MESSAGE,
+            messageText = messageText,
+            messageSentResult = messageSentResult
         )
     }
 
@@ -82,7 +82,10 @@ class RealtimePub(private val ably: AblyRealtime) {
         pub: Pub, receiver: PubGoer,
         messageReceived: (from: PubGoer, message: String) -> Unit
     ) {
-        registerForChannelMessage(pub, receiver, TEXT_MESSAGE, messageReceived)
+        registerForPubActions(pub = pub,
+            receiver = receiver,
+            messageName = TEXT_MESSAGE,
+            messageReceived = messageReceived)
     }
 
     fun offerDrink(
@@ -90,11 +93,11 @@ class RealtimePub(private val ably: AblyRealtime) {
         offerSentResult: (success: Boolean) -> Unit
     ) {
         sendUnidirectionalMessage(
-            who,
-            toWhom,
-            OFFER_DRINK,
-            "Here, a pint for you!",
-            offerSentResult
+            who = who,
+            toWhom = toWhom,
+            messageName = OFFER_DRINK,
+            messageText = "Here, a pint for you!",
+            messageSentResult = offerSentResult
         )
     }
 
@@ -102,17 +105,24 @@ class RealtimePub(private val ably: AblyRealtime) {
         pub: Pub, receiver: PubGoer,
         offerReceived: (from: PubGoer) -> Unit
     ) {
-        registerForChannelMessage(pub, receiver, OFFER_DRINK) { from: PubGoer, message: String ->
+        registerForPubActions(pub, receiver, OFFER_DRINK) { from: PubGoer, message: String ->
             offerReceived(from)
         }
     }
 
+    /**
+     * @param offered PubGoer who was offered the drink
+     * @param offeree PubGoer who offered the drink
+     * @param acceptResult result lambda which takes a single Boolean param,
+     * accept if true and reject if false.
+     * Note: When setting channel here make sure that it is set in the correct direction. In this
+     * case it should be offered -> offeree
+     * \*/
     fun registerToDrinkOfferResponse(
-        from: PubGoer, to: PubGoer,
+        offered: PubGoer, offeree: PubGoer,
         acceptResult: (success: Boolean) -> Unit
     ) {
-        //check if you are able to subscribed to multiple channels
-        val channelId = listOf(from, to).hashCode().toString()
+        val channelId = listOf(offered, offeree).hashCode().toString()
         ably.channels[channelId].subscribe(ACCEPT_DRINK) {
             acceptResult(true)
         }
@@ -121,7 +131,7 @@ class RealtimePub(private val ably: AblyRealtime) {
         }
     }
 
-    private fun registerForChannelMessage(
+    private fun registerForPubActions(
         pub: Pub, receiver: PubGoer, messageName: String,
         messageReceived: (from: PubGoer, message: String) -> Unit
     ) {
@@ -129,8 +139,8 @@ class RealtimePub(private val ably: AblyRealtime) {
             .filter { receiver != it }
             .forEach { from ->
                 val channelId = listOf(from, receiver).hashCode().toString()
+                Log.d(TAG, "${receiver.name} is now subscribed to $messageName from ${from.name} ")
                 ably.channels[channelId].subscribe(messageName) {
-                    val from = PubGoer(it.clientId)
                     messageReceived(from, it.data as String)
                 }
             }
