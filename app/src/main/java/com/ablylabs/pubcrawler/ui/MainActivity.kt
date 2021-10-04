@@ -1,11 +1,15 @@
 package com.ablylabs.pubcrawler.ui
 
+import android.app.Activity
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.ablylabs.pubcrawler.PubCrawlerApp
 import com.ablylabs.pubcrawler.R
@@ -97,6 +101,28 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         mapFragment.getMapAsync(this)
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val inflater = menuInflater
+        inflater.inflate(R.menu.main_menu, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+    val  resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // There are no request codes
+            result.data?.let {
+                //center to that pub and open infobox
+            }
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.search_item){
+            val intent = Intent(this, SearchPubActivity::class.java)
+            resultLauncher.launch(intent)
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
     override fun onMapReady(googleMap: GoogleMap?) {
         map = googleMap!!
         map.setOnCameraIdleListener(this)

@@ -22,6 +22,8 @@ class SearchPubActivity : AppCompatActivity(), TextWatcher {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search_pub)
+
+        supportActionBar?.title = "Search for pubs"
         pubInputTextView = findViewById(R.id.pubInputEditText)
         pubsResultRecyclerView = findViewById(R.id.pubsResultRecyclerView)
         pubsResultRecyclerView.adapter = resultsAdapter
@@ -39,6 +41,10 @@ class SearchPubActivity : AppCompatActivity(), TextWatcher {
 
     override fun afterTextChanged(editable: Editable?) {
         editable?.let {
+            if (it.isEmpty()){
+                resultsAdapter.setResult(listOf())
+                return
+            }
             val store = PubCrawlerApp.instance().pubsStore
             val result = store.searchForPubs(it.toString())
             when(result){
@@ -59,13 +65,13 @@ class SearchPubActivity : AppCompatActivity(), TextWatcher {
        override fun onCreateViewHolder(
            parent: ViewGroup,
            viewType: Int
-       ): ResultsAdapter.ViewHolder {
+       ): ViewHolder {
            val view = LayoutInflater.from(parent.context)
                .inflate(R.layout.item_pub, parent, false)
-           return ResultsAdapter.ViewHolder(view)
+           return ViewHolder(view)
        }
 
-       override fun onBindViewHolder(holder: ResultsAdapter.ViewHolder, position: Int) {
+       override fun onBindViewHolder(holder: ViewHolder, position: Int) {
            holder.pubTextView.text = pubs[position].name
        }
 
