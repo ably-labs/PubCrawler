@@ -108,9 +108,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
     }
     val  resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            // There are no request codes
-            result.data?.let {
-                //center to that pub and open infobox
+            result.data?.extras?.getString(SearchPubActivity.SELECTED_PUB_JSON)?.let {pubJson->
+               selectedPub =  Gson().fromJson(pubJson,Pub::class.java)
+                val pubLoc = LatLng(selectedPub.latitude, selectedPub.longitude)
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(pubLoc, DEFAULT_ZOOM))
+                showInfoFor(selectedPub)
             }
         }
     }
@@ -131,7 +133,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         val pubsStore = PubCrawlerApp.instance().pubsStore
         // Add a marker in Sydney and move the camera
         val bristol = LatLng(51.4684055, -2.7307999)
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(bristol, 12f))
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(bristol, DEFAULT_ZOOM))
         progress.apply {
             visibility = View.VISIBLE
             //this should move to a bg thread / coroutine later
@@ -199,6 +201,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
 
     private fun hideInfo() {
         bottomSheetBehaviour.state = BottomSheetBehavior.STATE_COLLAPSED
+    }
+
+    companion object{
+        val DEFAULT_ZOOM = 13f
     }
 
 }
