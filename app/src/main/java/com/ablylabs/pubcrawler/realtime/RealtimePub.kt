@@ -54,6 +54,7 @@ class RealtimePub(private val ably: AblyRealtime) {
     ) {
         val message = Message(messageName, messageText, who.name)
         val channelId = listOf(who, toWhom).hashCode().toString()
+        Log.d(TAG, "sendUnidirectionalMessage: $channelId")
         ably.channels[channelId]
             .publish(message, object : CompletionListener {
                 override fun onSuccess() {
@@ -123,6 +124,7 @@ class RealtimePub(private val ably: AblyRealtime) {
         acceptResult: (success: Boolean) -> Unit
     ) {
         val channelId = listOf(offered, offeree).hashCode().toString()
+        Log.d(TAG, "registerToDrinkOfferResponse: $channelId")
         ably.channels[channelId].subscribe(ACCEPT_DRINK) {
             acceptResult(true)
         }
