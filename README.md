@@ -7,6 +7,7 @@ This is an app listing pubs in the UK (pubs data downloaded from https://www.get
 
 Using this app, you can
 - List the pubs nearby your location (For the demo, the center of the map is going to be used as your location)
+- Search for pubs
 - View a pub and see how many people are there, Number of people should change when someone enter or exits a particular pub
 - Join a pub
 - Be aware when someone joins, have options to say 'hi'
