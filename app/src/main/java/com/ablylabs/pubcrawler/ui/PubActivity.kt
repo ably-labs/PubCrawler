@@ -95,10 +95,10 @@ class PubActivity : AppCompatActivity() {
         realtimePub.registerToDrinkOfferResponse(to, pubGoer) { accept ->
             runOnUiThread {
                 if (accept) {
-                    Toast.makeText(this, "${to.name} :  Cheers \n" +
+                    Toast.makeText(this, "${to.name} :  Cheers " +
                             "\uD83C\uDF7B", Toast.LENGTH_LONG).show()
                 } else {
-                    Toast.makeText(this, "${to.name}: Too drunk, thank you \n" +
+                    Toast.makeText(this, "${to.name}: Too drunk, thank you " +
                             "\uD83E\uDD74", Toast.LENGTH_LONG).show()
                 }
             }
