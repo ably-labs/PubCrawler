@@ -1,18 +1,18 @@
 # PubCrawler
-Pub crawler demo app demonstrating some Ably capabilities.
+Pub crawler demo app.
 
 Note: Work in progress
 
-This is an app listing pubs in the UK (pubs data downloaded from https://www.getthedata.com/open-pubs) 
+This is an app listing pubs in the UK (pubs data downloaded from https://www.getthedata.com/open-pubs) with a realtime layer
+built on top to demonstrate Ably capabilities
 
-Using this app, you can
-- List the pubs nearby your location (For the demo, the center of the map is going to be used as your location)
-- Search for pubs
-- View a pub and see how many people are there, Number of people should change when someone enter or exits a particular pub
-- Join a pub
-- Be aware when someone joins, have options to say 'hi'
-- Be able to offer a drink to somebody in the same pub.
-- Be able to accept / reject a drink.
+Features
+- Nearby location search
+- Keyword search for pubs
+- Observation of presence at particular pubs
+- Join a pub using Ably's presence feature
+- Option to send a simple message when in a particular pub using Ably's publish/subscribe features
+- Offer a drink and follow up with back and forth communication using Ably's publish/subscribe features
 
 To run this app simply checkout the repo
 - Open project in Android Studio (Arctic Fox 2020.3.1 Patch 2 was used to create the project)
