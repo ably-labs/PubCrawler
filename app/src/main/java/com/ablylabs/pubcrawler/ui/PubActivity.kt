@@ -10,8 +10,8 @@ import com.ablylabs.pubcrawler.PubCrawlerApp
 import com.ablylabs.pubcrawler.R
 import com.ablylabs.pubcrawler.pubs.Pub
 import com.ablylabs.pubcrawler.realtime.PubGoer
-import com.ablylabs.pubcrawler.realtime.PubUpdate
-import com.ablylabs.pubcrawler.realtime.RealtimePub
+import com.ablylabs.pubcrawler.realtime.PubPresenceUpdate
+import com.ablylabs.pubcrawler.realtime.ExpensiveRealtimePub
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 
@@ -89,7 +89,7 @@ class PubActivity : AppCompatActivity() {
     }
 
     private fun registerForOfferResponse(
-        realtimePub: RealtimePub,
+        realtimePub: ExpensiveRealtimePub,
         to: PubGoer
     ) {
         realtimePub.registerToDrinkOfferResponse(to, pubGoer) { accept ->
@@ -131,10 +131,10 @@ class PubActivity : AppCompatActivity() {
         realtimePub.registerToPresenceUpdates(pub) {
             runOnUiThread {
                 when (it) {
-                    is PubUpdate.Join -> {
+                    is PubPresenceUpdate.Join -> {
                         someoneJustJoined(it.pubGoer)
                     }
-                    is PubUpdate.Leave -> {
+                    is PubPresenceUpdate.Leave -> {
                         someoneJustLeft(it.pubGoer)
                     }
                 }
