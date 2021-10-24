@@ -158,11 +158,11 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
 }
 
 sealed class PubActions {
-    data class SomeoneJoined(val who: PubGoer)
-    data class SomeoneLeft(val who: PubGoer)
-    data class SomeoneSentMessage(val who: PubGoer, val message: String)
-    data class SomeoneOfferedDrink(val who: PubGoer)
-    data class SomeoneRespondedToDrinkOffer(val who: PubGoer, val accepted: Boolean)
+    data class SomeoneJoined(val who: PubGoer):PubActions()
+    data class SomeoneLeft(val who: PubGoer):PubActions()
+    data class SomeoneSentMessage(val who: PubGoer, val message: String):PubActions()
+    data class SomeoneOfferedDrink(val who: PubGoer):PubActions()
+    data class SomeoneRespondedToDrinkOffer(val who: PubGoer, val accepted: Boolean):PubActions()
 }
 
 sealed class JoinResult {
