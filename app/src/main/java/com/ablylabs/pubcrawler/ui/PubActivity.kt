@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.ablylabs.pubcrawler.PubCrawlerApp
@@ -12,6 +13,8 @@ import com.ablylabs.pubcrawler.pubs.Pub
 import com.ablylabs.pubcrawler.realtime.PubGoer
 import com.ablylabs.pubcrawler.realtime.PubPresenceUpdate
 import com.ablylabs.pubcrawler.realtime.ExpensiveRealtimePub
+import com.ablylabs.pubcrawler.realtime.FlowyPubImpl
+import com.ablylabs.pubcrawler.realtime.SuspendyPubImpl
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 
@@ -23,14 +26,17 @@ class PubActivity : AppCompatActivity() {
     private lateinit var peopleAdapter: PeopleRecylerAdapter
     private lateinit var pub: Pub
     private lateinit var pubGoer: PubGoer
+
+    private val viewModel: PubViewModel by viewModels{
+        val expensivePub = PubCrawlerApp.instance().realtimePub
+        PubViewModelFactory(this, FlowyPubImpl(SuspendyPubImpl(expensivePub)))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pub)
         peopleRecyclerView = findViewById(R.id.peopleRecyclerView)
         peopleAdapter = PeopleRecylerAdapter(this::sayHiTo, this::offerDrinkTo)
-        findViewById<Button>(R.id.leaveButton).setOnClickListener {
-            leavePub()
-        }
         intent.extras?.let { bundle ->
             bundle.getString(EXTRA_PUB_JSON)?.let {
                 pub = Gson().fromJson(it, Pub::class.java)
@@ -46,6 +52,9 @@ class PubActivity : AppCompatActivity() {
                 pubGoer = Gson().fromJson(it, PubGoer::class.java)
                 registerToPubActivities()
             }
+        }
+        findViewById<Button>(R.id.leaveButton).setOnClickListener {
+            viewModel.leavePub(pubGoer,pub)
         }
     }
 
