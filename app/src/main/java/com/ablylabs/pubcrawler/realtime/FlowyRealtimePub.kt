@@ -24,6 +24,8 @@ interface FlowyRealtimePub {
 
     suspend fun acceptDrink(who: PubGoer, fromWhom: PubGoer): AcceptDrinkResult
     suspend fun rejectDrink(who: PubGoer, fromWhom: PubGoer): RejectDrinkResult
+    suspend fun offerDrink(who: PubGoer, toWhom: PubGoer): OfferSentResult
+    suspend fun registerToDrinkOfferResponse(offered: PubGoer, offeree: PubGoer): DrinkOfferResponse
 
     //all pubgoers in a pub
     suspend fun allPubGoers(which: Pub): List<PubGoer>
@@ -31,8 +33,7 @@ interface FlowyRealtimePub {
 
 class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtimePub {
     override suspend fun join(pub: Pub, who: PubGoer): FlowJoinResult {
-        val joinResult = suspendyPub.join(who, pub)
-        return when (joinResult) {
+        return when (val joinResult = suspendyPub.join(who, pub)) {
             JoinResult.Success -> FlowJoinResult.Success(buildActionFlow(pub, who))
             is JoinResult.Failed -> FlowJoinResult.Failure(joinResult.reason)
         }
@@ -56,11 +57,17 @@ class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtime
 
     }
 
-
     override suspend fun leave(who: PubGoer, which: Pub): LeaveResult {
         return suspendyPub.leave(who,which)
     }
 
+    override suspend fun offerDrink(who: PubGoer, toWhom: PubGoer): OfferSentResult {
+        return suspendyPub.offerDrink(who,toWhom)
+    }
+
+    override suspend fun registerToDrinkOfferResponse(offered: PubGoer, offeree: PubGoer): DrinkOfferResponse {
+        return suspendyPub.registerToDrinkOfferResponse(offered,offeree)
+    }
     override suspend fun sendTextMessage(
         who: PubGoer,
         toWhom: PubGoer,

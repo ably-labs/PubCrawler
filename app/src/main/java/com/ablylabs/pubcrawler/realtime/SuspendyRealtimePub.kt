@@ -66,7 +66,8 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
         return suspendCoroutine { continuation ->
             realtimePub.sendTextMessage(who, toWhom, messageText) { success ->
                 continuation.resume(
-                    if (success) MessageSentResult.Success else MessageSentResult.Failed(
+                    if (success) MessageSentResult.Success(toWhom) else MessageSentResult.Failed(
+                        toWhom,
                         "Fail"
                     )
                 )
@@ -87,9 +88,7 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
         return suspendCoroutine { continuation ->
             realtimePub.offerDrink(who, toWhom) { success ->
                 continuation.resume(
-                    if (success) OfferSentResult.Success else OfferSentResult.Failed(
-                        "Fail"
-                    )
+                    if (success) OfferSentResult.Success(toWhom) else OfferSentResult.Failed(toWhom)
                 )
             }
         }
@@ -110,7 +109,7 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
     ): DrinkOfferResponse {
         return suspendCoroutine { continuation ->
             realtimePub.registerToDrinkOfferResponse(offered, offeree) { accept ->
-                continuation.resume(if (accept) DrinkOfferResponse.Accept else DrinkOfferResponse.Reject)
+                continuation.resume(if (accept) DrinkOfferResponse.Accept(offered) else DrinkOfferResponse.Reject(offered))
             }
         }
     }
@@ -158,11 +157,11 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
 }
 
 sealed class PubActions {
-    data class SomeoneJoined(val who: PubGoer):PubActions()
-    data class SomeoneLeft(val who: PubGoer):PubActions()
-    data class SomeoneSentMessage(val who: PubGoer, val message: String):PubActions()
-    data class SomeoneOfferedDrink(val who: PubGoer):PubActions()
-    data class SomeoneRespondedToDrinkOffer(val who: PubGoer, val accepted: Boolean):PubActions()
+    data class SomeoneJoined(val who: PubGoer) : PubActions()
+    data class SomeoneLeft(val who: PubGoer) : PubActions()
+    data class SomeoneSentMessage(val who: PubGoer, val message: String) : PubActions()
+    data class SomeoneOfferedDrink(val who: PubGoer) : PubActions()
+    data class SomeoneRespondedToDrinkOffer(val who: PubGoer, val accepted: Boolean) : PubActions()
 }
 
 sealed class JoinResult {
@@ -176,13 +175,13 @@ sealed class LeaveResult {
 }
 
 sealed class MessageSentResult {
-    object Success : MessageSentResult()
-    data class Failed(val reason: String) : MessageSentResult()
+    data class Success(val toWhom: PubGoer) : MessageSentResult()
+    data class Failed(val toWhom: PubGoer, val reason: String) : MessageSentResult()
 }
 
 sealed class OfferSentResult {
-    object Success : OfferSentResult()
-    data class Failed(val reason: String) : OfferSentResult()
+    data class Success(val toWhom: PubGoer) : OfferSentResult()
+    data class Failed(val toWhom: PubGoer) : OfferSentResult()
 }
 
 sealed class AcceptDrinkResult {
@@ -201,8 +200,8 @@ sealed class OfferReceivedResult {
 }
 
 sealed class DrinkOfferResponse {
-    object Accept : DrinkOfferResponse()
-    object Reject : DrinkOfferResponse()
+    data class Accept(val who: PubGoer) : DrinkOfferResponse()
+    data class Reject(val who: PubGoer) : DrinkOfferResponse()
 }
 
 // messageReceived: (from: PubGoer, message: String)
