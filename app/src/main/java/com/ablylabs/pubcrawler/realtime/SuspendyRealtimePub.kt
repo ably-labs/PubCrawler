@@ -157,11 +157,14 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
 }
 
 sealed class PubActions {
-    data class SomeoneJoined(val who: PubGoer) : PubActions()
-    data class SomeoneLeft(val who: PubGoer) : PubActions()
     data class SomeoneSentMessage(val who: PubGoer, val message: String) : PubActions()
     data class SomeoneOfferedDrink(val who: PubGoer) : PubActions()
     data class SomeoneRespondedToDrinkOffer(val who: PubGoer, val accepted: Boolean) : PubActions()
+}
+//need to create a different class for presence actions as they might need to be passed to different channels
+sealed class PubPresenceActions{
+    data class SomeoneJoined(val who: PubGoer) : PubPresenceActions()
+    data class SomeoneLeft(val who: PubGoer) : PubPresenceActions()
 }
 
 sealed class JoinResult {

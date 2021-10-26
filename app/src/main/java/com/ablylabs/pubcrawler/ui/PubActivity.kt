@@ -64,7 +64,8 @@ class PubActivity : AppCompatActivity() {
             when (it) {
                 is FlowJoinResult.Success -> {
                     lifecycleScope.launch {
-                        listenToTheFlow(it.flow)
+                        listenToTheFlow(it.actionFlow)
+                        listenToPresenceFlow(it.presenceActionFlow)
                     }
                     viewModel.refreshPubgoers(pub)
                 }
@@ -140,11 +141,17 @@ class PubActivity : AppCompatActivity() {
     private suspend fun listenToTheFlow(flow: Flow<PubActions>) {
         flow.collect {
             when (it) {
-                is PubActions.SomeoneJoined -> someoneJustJoined(it.who)
-                is PubActions.SomeoneLeft -> someoneJustLeft(it.who)
                 is PubActions.SomeoneOfferedDrink -> someoneOfferedDrink(it.who)
                 is PubActions.SomeoneRespondedToDrinkOffer -> someoneRespondedToDrinkOffer(it.who, it.accepted)
                 is PubActions.SomeoneSentMessage -> someoneSentMessage(it.who, it.message)
+            }
+        }
+    }
+    private suspend fun listenToPresenceFlow(flow: Flow<PubPresenceActions>) {
+        flow.collect {
+            when (it) {
+                is PubPresenceActions.SomeoneJoined -> someoneJustJoined(it.who)
+                is PubPresenceActions.SomeoneLeft -> someoneJustLeft(it.who)
             }
             viewModel.refreshPubgoers(pub)
         }
