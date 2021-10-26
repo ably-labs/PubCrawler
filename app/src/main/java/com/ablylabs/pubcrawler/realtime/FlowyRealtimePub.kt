@@ -7,19 +7,11 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
-
-sealed class FlowJoinResult {
-    data class Success(val actionFlow: Flow<PubActions>, val presenceActionFlow: Flow<PubPresenceActions>) :
-        FlowJoinResult()
-
-    data class Failure(val reason: String) : FlowJoinResult()
-}
-
 interface FlowyRealtimePub {
-    suspend fun join(pub: Pub, who: PubGoer): FlowJoinResult
+    suspend fun join(pub: Pub, who: PubGoer): JoinResult
     suspend fun leave(who: PubGoer, which: Pub): LeaveResult
-
-
+    suspend fun buildActionFlow(pub: Pub, who: PubGoer): Flow<PubActions>
+    suspend fun presenceFlow(pub: Pub): Flow<PubPresenceActions>
     suspend fun sendTextMessage(
         who: PubGoer,
         toWhom: PubGoer,
@@ -36,15 +28,11 @@ interface FlowyRealtimePub {
 }
 
 class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtimePub {
-    override suspend fun join(pub: Pub, who: PubGoer): FlowJoinResult {
-        return when (val joinResult = suspendyPub.join(who, pub)) {
-            JoinResult.Success -> {
-                FlowJoinResult.Success(buildActionFlow(pub, who), buildPresenceActionFlow(pub))
-            }
-            is JoinResult.Failed -> FlowJoinResult.Failure(joinResult.reason)
-        }
+    override suspend fun join(pub: Pub, who: PubGoer): JoinResult {
+        return suspendyPub.join(who, pub)
     }
 
+    @ExperimentalCoroutinesApi
     private fun buildPresenceActionFlow(pub: Pub): Flow<PubPresenceActions> {
         return channelFlow {
             suspendyPub.registerToPresenceUpdates(pub).collect {
@@ -57,7 +45,7 @@ class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtime
     }
 
     @ExperimentalCoroutinesApi
-    private suspend fun buildActionFlow(pub: Pub, who: PubGoer): Flow<PubActions> {
+    override suspend fun buildActionFlow(pub: Pub, who: PubGoer): Flow<PubActions> {
         return channelFlow {
             suspendyPub.registerToDrinkOffers(pub, who).collect { pubgoer ->
                 launch {
@@ -70,7 +58,10 @@ class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtime
                 }
             }
         }
+    }
 
+    override suspend fun presenceFlow(pub: Pub): Flow<PubPresenceActions> {
+        return buildPresenceActionFlow(pub)
     }
 
     override suspend fun leave(who: PubGoer, which: Pub): LeaveResult {

@@ -62,14 +62,12 @@ class PubActivity : AppCompatActivity() {
 
         viewModel.joinResult.observe(this) {
             when (it) {
-                is FlowJoinResult.Success -> {
+                is JoinResult.Success -> {
                     lifecycleScope.launch {
-                        listenToTheFlow(it.actionFlow)
-                        listenToPresenceFlow(it.presenceActionFlow)
+                        listenToTheFlow()
                     }
-                    viewModel.refreshPubgoers(pub)
                 }
-                is FlowJoinResult.Failure -> {
+                is JoinResult.Failed -> {
                     Toast.makeText(this, "Unable to join", Toast.LENGTH_SHORT).show()
                     finish()
                 }
@@ -136,24 +134,22 @@ class PubActivity : AppCompatActivity() {
             peopleAdapter.notifyDataSetChanged()
         }
 
+        viewModel.presenceActions.observe(this) {
+            when (it) {
+                is PubPresenceActions.SomeoneJoined -> someoneJustJoined(it.who)
+                is PubPresenceActions.SomeoneLeft -> someoneJustLeft(it.who)
+            }
+        }
+
     }
 
-    private suspend fun listenToTheFlow(flow: Flow<PubActions>) {
-        flow.collect {
+    private fun listenToTheFlow() {
+        viewModel.pubActions.observe(this) {
             when (it) {
                 is PubActions.SomeoneOfferedDrink -> someoneOfferedDrink(it.who)
                 is PubActions.SomeoneRespondedToDrinkOffer -> someoneRespondedToDrinkOffer(it.who, it.accepted)
                 is PubActions.SomeoneSentMessage -> someoneSentMessage(it.who, it.message)
             }
-        }
-    }
-    private suspend fun listenToPresenceFlow(flow: Flow<PubPresenceActions>) {
-        flow.collect {
-            when (it) {
-                is PubPresenceActions.SomeoneJoined -> someoneJustJoined(it.who)
-                is PubPresenceActions.SomeoneLeft -> someoneJustLeft(it.who)
-            }
-            viewModel.refreshPubgoers(pub)
         }
     }
 
