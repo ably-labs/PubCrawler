@@ -1,9 +1,12 @@
 package com.ablylabs.pubcrawler.realtime
 
 import com.ablylabs.pubcrawler.pubs.Pub
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 
 
 sealed class FlowJoinResult {
@@ -39,19 +42,25 @@ class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtime
         }
     }
 
+    @ExperimentalCoroutinesApi
     private suspend fun buildActionFlow(pub: Pub, who: PubGoer): Flow<PubActions> {
-        return flow {
+        return channelFlow {
             suspendyPub.registerToPresenceUpdates(pub).collect {
                 when (it) {
-                    is PubPresenceUpdate.Join -> emit(PubActions.SomeoneJoined(it.pubGoer))
-                    is PubPresenceUpdate.Leave -> emit(PubActions.SomeoneLeft(it.pubGoer))
+                    is PubPresenceUpdate.Join -> launch {send(PubActions.SomeoneJoined(it.pubGoer))  }
+                    is PubPresenceUpdate.Leave -> launch { send(PubActions.SomeoneLeft(it.pubGoer)) }
                 }
             }
             suspendyPub.registerToDrinkOffers(pub, who).collect { pubgoer ->
-                emit(PubActions.SomeoneOfferedDrink(pubgoer))
+               launch {
+                   send(PubActions.SomeoneOfferedDrink(pubgoer))
+               }
             }
             suspendyPub.registerToTextMessage(pub,who).collect {
-                emit(PubActions.SomeoneSentMessage(it.from,it.message))
+                launch {
+                    send(PubActions.SomeoneSentMessage(it.from,it.message))
+                }
+
             }
         }
 

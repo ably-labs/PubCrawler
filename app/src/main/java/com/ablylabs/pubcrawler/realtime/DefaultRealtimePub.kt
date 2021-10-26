@@ -2,6 +2,7 @@ package com.ablylabs.pubcrawler.realtime
 
 import com.ablylabs.pubcrawler.pubs.Pub
 
+//this should be an inexpensive pub
 class DefaultRealtimePub :RealtimePub {
     override fun numberOfPeopleInPub(pub: Pub): Int {
         TODO("Not yet implemented")
