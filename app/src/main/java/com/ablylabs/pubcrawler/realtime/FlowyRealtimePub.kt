@@ -1,11 +1,12 @@
 package com.ablylabs.pubcrawler.realtime
 
+import android.util.Log
 import com.ablylabs.pubcrawler.pubs.Pub
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+
+private const val TAG = "FlowyRealtimePub"
 
 interface FlowyRealtimePub {
     suspend fun join(pub: Pub, who: PubGoer): JoinResult
@@ -13,9 +14,9 @@ interface FlowyRealtimePub {
     suspend fun buildActionFlow(pub: Pub, who: PubGoer): Flow<PubActions>
     suspend fun presenceFlow(pub: Pub): Flow<PubPresenceActions>
     suspend fun sendTextMessage(
-        who: PubGoer,
-        toWhom: PubGoer,
-        messageText: String
+            who: PubGoer,
+            toWhom: PubGoer,
+            messageText: String
     ): MessageSentResult
 
     suspend fun acceptDrink(who: PubGoer, fromWhom: PubGoer): AcceptDrinkResult
@@ -33,32 +34,34 @@ class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtime
     }
 
     @ExperimentalCoroutinesApi
-    private fun buildPresenceActionFlow(pub: Pub): Flow<PubPresenceActions> {
-        return channelFlow {
-            suspendyPub.registerToPresenceUpdates(pub).collect {
-                when (it) {
-                    is PubPresenceUpdate.Join -> launch { send(PubPresenceActions.SomeoneJoined(it.pubGoer)) }
-                    is PubPresenceUpdate.Leave -> launch { send(PubPresenceActions.SomeoneLeft(it.pubGoer)) }
-                }
+    private fun buildPresenceActionFlow(pub: Pub) = flow {
+        Log.d(TAG, "registering to presence updateds")
+        suspendyPub.registerToPresenceUpdates(pub).collect {
+            when (it) {
+                is PubPresenceUpdate.Join -> emit(PubPresenceActions.SomeoneJoined(it.pubGoer))
+                is PubPresenceUpdate.Leave -> emit(PubPresenceActions.SomeoneLeft(it.pubGoer))
             }
         }
     }
 
     @ExperimentalCoroutinesApi
-    override suspend fun buildActionFlow(pub: Pub, who: PubGoer): Flow<PubActions> {
-        return channelFlow {
-            suspendyPub.registerToDrinkOffers(pub, who).collect { pubgoer ->
+    override suspend fun buildActionFlow(pub: Pub, who: PubGoer) =
+            channelFlow {
                 launch {
-                    send(PubActions.SomeoneOfferedDrink(pubgoer))
+                    Log.d(TAG, "registering to drink offers")
+                    suspendyPub.registerToDrinkOffers(pub, who).collect { pubgoer ->
+                        Log.d(TAG, "Drink offer received from ${pubgoer.name}")
+                        send(PubActions.SomeoneOfferedDrink(pubgoer))
+                    }
+                }
+                launch {
+                    Log.d(TAG, "registering to text messages")
+                    suspendyPub.registerToTextMessage(pub, who).collect {
+                        Log.d(TAG, "Text message receiived from ${it.from.name}")
+                        send(PubActions.SomeoneSentMessage(it.from, it.message))
+                    }
                 }
             }
-            suspendyPub.registerToTextMessage(pub, who).collect {
-                launch {
-                    send(PubActions.SomeoneSentMessage(it.from, it.message))
-                }
-            }
-        }
-    }
 
     override suspend fun presenceFlow(pub: Pub): Flow<PubPresenceActions> {
         return buildPresenceActionFlow(pub)
@@ -77,9 +80,9 @@ class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtime
     }
 
     override suspend fun sendTextMessage(
-        who: PubGoer,
-        toWhom: PubGoer,
-        messageText: String
+            who: PubGoer,
+            toWhom: PubGoer,
+            messageText: String
     ): MessageSentResult {
         return suspendyPub.sendTextMessage(who, toWhom, messageText)
     }
