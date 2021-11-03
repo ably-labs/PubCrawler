@@ -1,5 +1,6 @@
 package com.ablylabs.pubcrawler.ui
 
+import android.util.Log
 import androidx.lifecycle.*
 import androidx.savedstate.SavedStateRegistryOwner
 import com.ablylabs.pubcrawler.pubs.Pub
@@ -7,10 +8,13 @@ import com.ablylabs.pubcrawler.realtime.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
+private const val TAG = "PubViewModel"
+
 class PubViewModel(private val flowyPub: FlowyRealtimePub) : ViewModel() {
     //following needs to be transformed from flows, they need not to be exposed like this
     private val _presenceActions = MutableLiveData<PubPresenceActions>()
     val presenceActions: LiveData<PubPresenceActions> = _presenceActions
+
     //
     //following needs to be transformed from flows, they need not to be exposed like this
     private val _pubActions = MutableLiveData<PubActions>()
@@ -54,27 +58,24 @@ class PubViewModel(private val flowyPub: FlowyRealtimePub) : ViewModel() {
         viewModelScope.launch {
             _joinResult.value = flowyPub.join(which, who)
             _allPubGoers.value = flowyPub.allPubGoers(which)
-            if (_joinResult.value is JoinResult.Success){
-                buildActionFlowFor(which, who)
-                flowyPub.presenceFlow(pub = which).collect {
-                    _presenceActions.value = it
-                    //rebuild action flow
-                    buildActionFlowFor(which, who)
-                }
+            if (_joinResult.value is JoinResult.Success) {
+                launch { buildActionFlowFor(which, who) }
+                launch { buildPresenceFlow(which, who) }
             }
+        }
+    }
 
-
-            //start sending messages to other people just for test
-            /*    launch {
-                    repeat(10) {
-                        delay(6000)
-                        _allPubGoers.value?.let {
-                            it.filter { it != who }.forEach {
-                                sendTextMessage(who, it, "I am annoying")
-                            }
-                        }
-                    }
-                }*/
+    private suspend fun buildPresenceFlow(
+        which: Pub,
+        who: PubGoer
+    ) {
+        flowyPub.buildPresenceFlow(pub = which).collect {
+            Log.d(TAG, "buildPresenceFlow: presence flow collect")
+            _presenceActions.value = it
+            //also refresh users again
+            _allPubGoers.value = flowyPub.allPubGoers(which)
+            //rebuild action flow
+            buildActionFlowFor(which, who)
         }
     }
 
@@ -109,7 +110,8 @@ class PubViewModel(private val flowyPub: FlowyRealtimePub) : ViewModel() {
         viewModelScope.launch {
             _offerDrinkResult.value = flowyPub.offerDrink(who, toWhom)
             if (_offerDrinkResult.value is OfferSentResult.Success) {
-                _offerResponse.value = flowyPub.registerToDrinkOfferResponse(offered = toWhom, offeree = who)
+                _offerResponse.value =
+                    flowyPub.registerToDrinkOfferResponse(offered = toWhom, offeree = who)
             }
         }
     }

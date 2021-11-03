@@ -12,11 +12,11 @@ interface FlowyRealtimePub {
     suspend fun join(pub: Pub, who: PubGoer): JoinResult
     suspend fun leave(who: PubGoer, which: Pub): LeaveResult
     suspend fun buildActionFlow(pub: Pub, who: PubGoer): Flow<PubActions>
-    suspend fun presenceFlow(pub: Pub): Flow<PubPresenceActions>
+    suspend fun buildPresenceFlow(pub: Pub): Flow<PubPresenceActions>
     suspend fun sendTextMessage(
-            who: PubGoer,
-            toWhom: PubGoer,
-            messageText: String
+        who: PubGoer,
+        toWhom: PubGoer,
+        messageText: String
     ): MessageSentResult
 
     suspend fun acceptDrink(who: PubGoer, fromWhom: PubGoer): AcceptDrinkResult
@@ -34,37 +34,35 @@ class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtime
     }
 
     @ExperimentalCoroutinesApi
-    private fun buildPresenceActionFlow(pub: Pub) = flow {
-        Log.d(TAG, "registering to presence updateds")
-        suspendyPub.registerToPresenceUpdates(pub).collect {
-            when (it) {
-                is PubPresenceUpdate.Join -> emit(PubPresenceActions.SomeoneJoined(it.pubGoer))
-                is PubPresenceUpdate.Leave -> emit(PubPresenceActions.SomeoneLeft(it.pubGoer))
+    override suspend fun buildActionFlow(pub: Pub, who: PubGoer) =
+        channelFlow {
+            launch {
+                Log.d(TAG, "registering to drink offers")
+                suspendyPub.registerToDrinkOffers(pub, who).collect { pubgoer ->
+                    Log.d(TAG, "Drink offer received from ${pubgoer.name}")
+                    send(PubActions.SomeoneOfferedDrink(pubgoer))
+                }
+            }
+            launch {
+                Log.d(TAG, "registering to text messages")
+                suspendyPub.registerToTextMessage(pub, who).collect {
+                    Log.d(TAG, "Text message receiived from ${it.from.name}")
+                    send(PubActions.SomeoneSentMessage(it.from, it.message))
+                }
             }
         }
-    }
 
     @ExperimentalCoroutinesApi
-    override suspend fun buildActionFlow(pub: Pub, who: PubGoer) =
-            channelFlow {
-                launch {
-                    Log.d(TAG, "registering to drink offers")
-                    suspendyPub.registerToDrinkOffers(pub, who).collect { pubgoer ->
-                        Log.d(TAG, "Drink offer received from ${pubgoer.name}")
-                        send(PubActions.SomeoneOfferedDrink(pubgoer))
-                    }
-                }
-                launch {
-                    Log.d(TAG, "registering to text messages")
-                    suspendyPub.registerToTextMessage(pub, who).collect {
-                        Log.d(TAG, "Text message receiived from ${it.from.name}")
-                        send(PubActions.SomeoneSentMessage(it.from, it.message))
-                    }
+    override suspend fun buildPresenceFlow(pub: Pub) = channelFlow {
+        launch {
+            Log.d(TAG, "registering to presence flow")
+            suspendyPub.registerToPresenceUpdates(pub).collect {
+                when (it) {
+                    is PubPresenceUpdate.Join -> send(PubPresenceActions.SomeoneJoined(it.pubGoer))
+                    is PubPresenceUpdate.Leave -> send(PubPresenceActions.SomeoneLeft(it.pubGoer))
                 }
             }
-
-    override suspend fun presenceFlow(pub: Pub): Flow<PubPresenceActions> {
-        return buildPresenceActionFlow(pub)
+        }
     }
 
     override suspend fun leave(who: PubGoer, which: Pub): LeaveResult {
@@ -75,14 +73,17 @@ class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtime
         return suspendyPub.offerDrink(who, toWhom)
     }
 
-    override suspend fun registerToDrinkOfferResponse(offered: PubGoer, offeree: PubGoer): DrinkOfferResponse {
+    override suspend fun registerToDrinkOfferResponse(
+        offered: PubGoer,
+        offeree: PubGoer
+    ): DrinkOfferResponse {
         return suspendyPub.registerToDrinkOfferResponse(offered, offeree)
     }
 
     override suspend fun sendTextMessage(
-            who: PubGoer,
-            toWhom: PubGoer,
-            messageText: String
+        who: PubGoer,
+        toWhom: PubGoer,
+        messageText: String
     ): MessageSentResult {
         return suspendyPub.sendTextMessage(who, toWhom, messageText)
     }
