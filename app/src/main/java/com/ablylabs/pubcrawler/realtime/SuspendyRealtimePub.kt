@@ -41,8 +41,9 @@ interface SuspendyRealtimePub {
 
 class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePub {
     override suspend fun numberOfPeopleInPub(pub: Pub): Int {
-        //will this help unblocking?
-        return realtimePub.numberOfPeopleInPub(pub)
+        return suspendCoroutine { continuation ->
+            continuation.resume(realtimePub.numberOfPeopleInPub(pub))
+        }
     }
 
     override suspend fun join(who: PubGoer, which: Pub): JoinResult {
