@@ -152,7 +152,9 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
 
     override suspend fun allPubGoers(which: Pub): List<PubGoer> {
         //is this blocking?
-        return realtimePub.allPubGoers(which)
+        return suspendCoroutine { continuation ->
+            continuation.resume(realtimePub.allPubGoers(which))
+        }
     }
 
     override suspend fun registerToPresenceUpdates(pub: Pub): Flow<PubPresenceUpdate> {
