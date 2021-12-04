@@ -159,10 +159,13 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
 
     override suspend fun registerToPresenceUpdates(pub: Pub): Flow<PubPresenceUpdate> {
         return suspendCoroutine { continuation ->
-            realtimePub.registerToPresenceUpdates(pub) { update ->
-                val flow = flow { emit(update) }
-                continuation.resume(flow)
+            val flow = callbackFlow {
+                realtimePub.registerToPresenceUpdates(pub) { update ->
+                    trySend(update)
+                }
+                awaitClose { cancel() }
             }
+            continuation.resume(flow)
         }
     }
 
