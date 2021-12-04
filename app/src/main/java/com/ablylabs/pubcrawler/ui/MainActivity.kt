@@ -54,19 +54,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         joinButton.setOnClickListener {
             checkName(this) { name ->
                 val who = PubGoer(name)
-                realtimePub.join(who, selectedPub) {
-                    if (it){
-                        Intent(this, PubActivity::class.java).apply {
-                            val gson = Gson()
-                            putExtra(PubActivity.EXTRA_PUB_JSON, gson.toJson(selectedPub))
-                            putExtra(PubActivity.EXTRA_PUBGOER_JSON,gson.toJson(who))
-                            startActivity(this)
-                        }
-                    }else{
-                        Toast.makeText(
-                            this,"Cannot join pub", Toast.LENGTH_SHORT).show()
-                    }
 
+                Intent(this, PubActivity::class.java).apply {
+                    val gson = Gson()
+                    putExtra(PubActivity.EXTRA_PUB_JSON, gson.toJson(selectedPub))
+                    putExtra(PubActivity.EXTRA_PUBGOER_JSON,gson.toJson(who))
+                    startActivity(this)
                 }
             }
 

@@ -4,16 +4,19 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.ablylabs.pubcrawler.PubCrawlerApp
 import com.ablylabs.pubcrawler.R
 import com.ablylabs.pubcrawler.pubs.Pub
-import com.ablylabs.pubcrawler.realtime.PubGoer
-import com.ablylabs.pubcrawler.realtime.PubUpdate
-import com.ablylabs.pubcrawler.realtime.RealtimePub
+import com.ablylabs.pubcrawler.realtime.*
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 
 private const val TAG = "PubActivity"
@@ -23,14 +26,17 @@ class PubActivity : AppCompatActivity() {
     private lateinit var peopleAdapter: PeopleRecylerAdapter
     private lateinit var pub: Pub
     private lateinit var pubGoer: PubGoer
+
+    private val viewModel: PubViewModel by viewModels {
+        val expensivePub = PubCrawlerApp.instance().realtimePub
+        PubViewModelFactory(this, FlowyPubImpl(SuspendyPubImpl(expensivePub)))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pub)
         peopleRecyclerView = findViewById(R.id.peopleRecyclerView)
         peopleAdapter = PeopleRecylerAdapter(this::sayHiTo, this::offerDrinkTo)
-        findViewById<Button>(R.id.leaveButton).setOnClickListener {
-            leavePub()
-        }
         intent.extras?.let { bundle ->
             bundle.getString(EXTRA_PUB_JSON)?.let {
                 pub = Gson().fromJson(it, Pub::class.java)
@@ -39,84 +45,153 @@ class PubActivity : AppCompatActivity() {
                 supportActionBar?.subtitle = "${realtimePub.numberOfPeopleInPub(pub)} people here"
                 peopleRecyclerView.adapter = peopleAdapter
                 listPeople(pub)
-                registerToPresenceUpdates(pub)
-
             }
             bundle.getString(EXTRA_PUBGOER_JSON)?.let {
                 pubGoer = Gson().fromJson(it, PubGoer::class.java)
-                registerToPubActivities()
+                viewModel.joinPub(pubGoer, pub)
+            }
+        }
+        findViewById<Button>(R.id.leaveButton).setOnClickListener {
+            viewModel.leavePub(pubGoer, pub)
+        }
+        setupObservers()
+    }
+
+    private fun setupObservers() {
+        viewModel.leaveResult.observe(this) { finish() }
+
+        viewModel.joinResult.observe(this) {
+            when (it) {
+                is JoinResult.Success -> {
+                    lifecycleScope.launch {
+                        listenToTheFlow()
+                    }
+                }
+                is JoinResult.Failed -> {
+                    Toast.makeText(this, "Unable to join", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+            }
+        }
+
+        viewModel.acceptDrinkResult.observe(this) {
+            when (it) {
+                AcceptDrinkResult.Success ->
+                    Toast.makeText(this, "Accept received", Toast.LENGTH_LONG).show()
+                is AcceptDrinkResult.Failed ->
+                    Toast.makeText(this, "Accept not received", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        viewModel.rejectDrinkResult.observe(this) {
+            when (it) {
+                RejectDrinkResult.Success ->
+                    Toast.makeText(this, "Accept received", Toast.LENGTH_LONG).show()
+                is RejectDrinkResult.Failed ->
+                    Toast.makeText(this, "Accept not received", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        viewModel.messageSentResult.observe(this) {
+            when (it) {
+                is MessageSentResult.Failed -> Toast.makeText(
+                    this, "Couldn't send message to ${it.toWhom.name}", Toast
+                        .LENGTH_SHORT
+                )
+                    .show()
+                is MessageSentResult.Success -> Toast.makeText(
+                    this, "Message sent to ${it.toWhom.name}", Toast
+                        .LENGTH_SHORT
+                )
+                    .show()
+            }
+        }
+
+        viewModel.offerDrinkResult.observe(this) {
+            when (it) {
+                is OfferSentResult.Failed -> Toast.makeText(
+                    this, "Couldn't offer drink to ${it.toWhom.name}", Toast
+                        .LENGTH_SHORT
+                )
+                    .show()
+                is OfferSentResult.Success -> Toast.makeText(
+                    this,
+                    "Successfully offered drink to ${it.toWhom.name}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        viewModel.offerResponse.observe(this) {
+            when (it) {
+                is DrinkOfferResponse.Accept -> someoneRespondedToDrinkOffer(it.who, true)
+                is DrinkOfferResponse.Reject -> someoneRespondedToDrinkOffer(it.who, false)
+            }
+        }
+
+        viewModel.allPubGoers.observe(this) {
+            peopleAdapter.setPubGoers(it)
+            peopleAdapter.notifyDataSetChanged()
+        }
+
+        viewModel.presenceActions.observe(this) {
+            when (it) {
+                is PubPresenceActions.SomeoneJoined -> someoneJustJoined(it.who)
+                is PubPresenceActions.SomeoneLeft -> someoneJustLeft(it.who)
+            }
+        }
+
+    }
+
+    private fun listenToTheFlow() {
+        viewModel.pubActions.observe(this) {
+            when (it) {
+                is PubActions.SomeoneOfferedDrink -> someoneOfferedDrink(it.who)
+                is PubActions.SomeoneRespondedToDrinkOffer -> someoneRespondedToDrinkOffer(it.who, it.accepted)
+                is PubActions.SomeoneSentMessage -> someoneSentMessage(it.who, it.message)
+            }
+        }
+    }
+
+    private fun someoneSentMessage(who: PubGoer, message: String) {
+        Toast.makeText(this, "${who} : ${message}", Toast.LENGTH_LONG)
+            .show()
+    }
+
+    private fun someoneRespondedToDrinkOffer(who: PubGoer, accepted: Boolean) {
+        if (accepted) {
+            Toast.makeText(
+                this, "${who.name} :  Cheers " +
+                        "\uD83C\uDF7B", Toast.LENGTH_LONG
+            ).show()
+        } else {
+            Toast.makeText(
+                this, "${who.name}: Too drunk, thank you " +
+                        "\uD83E\uDD74", Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun someoneOfferedDrink(who: PubGoer) {
+        showDrinkOfferDialog(this, who) { accept ->
+            if (accept) {
+                viewModel.acceptDrink(pubGoer, who)
+            } else {
+                viewModel.rejectDrink(pubGoer, who)
             }
         }
     }
 
     private fun sayHiTo(to: PubGoer) {
-        val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.sendTextMessage(pubGoer, to, "Hi \uD83D\uDC4B") {
-            //Something to check, callback from Ably works on background thread?
-            runOnUiThread {
-                if (it) {
-                    Toast.makeText(
-                        this,
-                        "Successfully sent message to ${to.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    Toast.makeText(this, "Couldn't send message to ${to.name}", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-        }
+        viewModel.sendTextMessage(pubGoer, to, "Hi \uD83D\uDC4B")
     }
 
     private fun offerDrinkTo(to: PubGoer) {
-        val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.offerDrink(pubGoer, to) { success ->
-            runOnUiThread {
-                if (success) {
-                    //switch actors
-                    registerForOfferResponse(realtimePub, to)
-                    Toast.makeText(
-                        this,
-                        "Successfully offered drink to ${to.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    Toast.makeText(this, "Couldn't offer drink to ${to.name}", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-        }
-    }
-
-    private fun registerForOfferResponse(
-        realtimePub: RealtimePub,
-        to: PubGoer
-    ) {
-        realtimePub.registerToDrinkOfferResponse(to, pubGoer) { accept ->
-            runOnUiThread {
-                if (accept) {
-                    Toast.makeText(this, "${to.name} :  Cheers " +
-                            "\uD83C\uDF7B", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(this, "${to.name}: Too drunk, thank you " +
-                            "\uD83E\uDD74", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    private fun leavePub() {
-        PubCrawlerApp.instance().realtimePub.leave(pubGoer, pub) {
-            if (it) {
-                finish()
-            } else {
-                Toast.makeText(this, "Sorry, cannot leave the pub", Toast.LENGTH_SHORT).show()
-            }
-        }
+        viewModel.offerDrinkTo(pubGoer, to)
     }
 
     override fun onBackPressed() {
-        leavePub()
+        viewModel.leavePub(pubGoer, pub)
     }
 
     private fun listPeople(pub: Pub) {
@@ -126,49 +201,6 @@ class PubActivity : AppCompatActivity() {
         peopleAdapter.notifyDataSetChanged()
     }
 
-    private fun registerToPresenceUpdates(pub: Pub) {
-        val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.registerToPresenceUpdates(pub) {
-            runOnUiThread {
-                when (it) {
-                    is PubUpdate.Join -> {
-                        someoneJustJoined(it.pubGoer)
-                    }
-                    is PubUpdate.Leave -> {
-                        someoneJustLeft(it.pubGoer)
-                    }
-                }
-
-                listPeople(pub)
-            }
-        }
-    }
-
-    private fun registerToPubActivities() {
-        val realtimePub = PubCrawlerApp.instance().realtimePub
-        realtimePub.registerToTextMessage(pub, pubGoer) { from, message ->
-            runOnUiThread {
-                Toast.makeText(this, "${from.name} : $message", Toast.LENGTH_LONG).show()
-            }
-        }
-        realtimePub.registerToDrinkOffers(pub, pubGoer) { from ->
-            runOnUiThread {
-                showDrinkOfferDialog(this, from) { accept ->
-                    if (accept) {
-                        realtimePub.acceptDrink(pubGoer, from) {
-                            Toast.makeText(this, "Accept received", Toast.LENGTH_LONG).show()
-                        }
-                    } else {
-                        realtimePub.rejectDrink(pubGoer, from) {
-                            Toast.makeText(this, "Reject received", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                }
-
-            }
-        }
-
-    }
 
     private fun someoneJustJoined(
         pubGoer: PubGoer
@@ -181,7 +213,7 @@ class PubActivity : AppCompatActivity() {
         ).setAction(R.string.say_hi) {
             sayHiTo(pubGoer)
         }.show()
-        registerToPubActivities()
+        listPeople(pub)
     }
 
     private fun someoneJustLeft(
@@ -193,7 +225,7 @@ class PubActivity : AppCompatActivity() {
             "${pubGoer.name} left the pub",
             Snackbar.LENGTH_SHORT
         ).show()
-        registerToPubActivities()
+        listPeople(pub)
     }
 
     companion object {
