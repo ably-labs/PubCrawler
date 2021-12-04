@@ -1,7 +1,10 @@
 package com.ablylabs.pubcrawler.realtime
 
 import com.ablylabs.pubcrawler.pubs.Pub
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -77,10 +80,13 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
 
     override suspend fun registerToTextMessage(pub: Pub, receiver: PubGoer): Flow<ReceivedMessage> {
         return suspendCoroutine { continuation ->
-            realtimePub.registerToTextMessage(pub, receiver) { from, message ->
-                val flow = flow { emit(ReceivedMessage(from, message)) }
-                continuation.resume(flow)
+            val flow = callbackFlow {
+                realtimePub.registerToTextMessage(pub, receiver) { from, message ->
+                    trySend(ReceivedMessage(from, message))
+                }
+                awaitClose { cancel() }
             }
+            continuation.resume(flow)
         }
     }
 
@@ -96,10 +102,13 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
 
     override suspend fun registerToDrinkOffers(pub: Pub, receiver: PubGoer): Flow<PubGoer> {
         return suspendCoroutine { continuation ->
-            realtimePub.registerToDrinkOffers(pub, receiver) { from ->
-                val flow = flow { emit(from) }
-                continuation.resume(flow)
+            val flow = callbackFlow {
+                realtimePub.registerToDrinkOffers(pub, receiver) { from ->
+                    trySend(from)
+                }
+                awaitClose { cancel() }
             }
+            continuation.resume(flow)
         }
     }
 
@@ -109,7 +118,11 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
     ): DrinkOfferResponse {
         return suspendCoroutine { continuation ->
             realtimePub.registerToDrinkOfferResponse(offered, offeree) { accept ->
-                continuation.resume(if (accept) DrinkOfferResponse.Accept(offered) else DrinkOfferResponse.Reject(offered))
+                continuation.resume(
+                    if (accept) DrinkOfferResponse.Accept(offered) else DrinkOfferResponse.Reject(
+                        offered
+                    )
+                )
             }
         }
     }
@@ -161,8 +174,9 @@ sealed class PubActions {
     data class SomeoneOfferedDrink(val who: PubGoer) : PubActions()
     data class SomeoneRespondedToDrinkOffer(val who: PubGoer, val accepted: Boolean) : PubActions()
 }
+
 //need to create a different class for presence actions as they might need to be passed to different channels
-sealed class PubPresenceActions{
+sealed class PubPresenceActions {
     data class SomeoneJoined(val who: PubGoer) : PubPresenceActions()
     data class SomeoneLeft(val who: PubGoer) : PubPresenceActions()
 }
