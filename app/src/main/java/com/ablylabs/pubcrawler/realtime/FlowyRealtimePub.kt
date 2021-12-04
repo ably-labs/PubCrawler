@@ -54,13 +54,11 @@ class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtime
 
     @ExperimentalCoroutinesApi
     override suspend fun buildPresenceFlow(pub: Pub) = channelFlow {
-        launch {
-            Log.d(TAG, "registering to presence flow")
-            suspendyPub.registerToPresenceUpdates(pub).collect {
-                when (it) {
-                    is PubPresenceUpdate.Join -> send(PubPresenceActions.SomeoneJoined(it.pubGoer))
-                    is PubPresenceUpdate.Leave -> send(PubPresenceActions.SomeoneLeft(it.pubGoer))
-                }
+        Log.d(TAG, "registering to presence flow")
+        suspendyPub.registerToPresenceUpdates(pub).collect {
+            when (it) {
+                is PubPresenceUpdate.Join -> send(PubPresenceActions.SomeoneJoined(it.pubGoer))
+                is PubPresenceUpdate.Leave -> send(PubPresenceActions.SomeoneLeft(it.pubGoer))
             }
         }
     }
