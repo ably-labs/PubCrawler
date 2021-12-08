@@ -8,7 +8,7 @@ class DefaultRealtimePub :RealtimePub {
         TODO("Not yet implemented")
     }
 
-    override fun join(who: PubGoer, which: Pub, joinResult: (success: Boolean) -> Unit) {
+    override fun enter(who: PubGoer, which: Pub, joinResult: (success: Boolean) -> Unit) {
         TODO("Not yet implemented")
     }
 

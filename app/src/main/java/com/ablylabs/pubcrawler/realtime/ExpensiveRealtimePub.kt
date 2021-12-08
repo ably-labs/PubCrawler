@@ -15,7 +15,7 @@ class ExpensiveRealtimePub(private val ably: AblyRealtime) : RealtimePub {
 
     override fun numberOfPeopleInPub(pub: Pub) = ably.channels[pub.name].presence.get().size
 
-    override fun join(who: PubGoer, which: Pub, joinResult: (success: Boolean) -> Unit) {
+    override fun enter(who: PubGoer, which: Pub, joinResult: (success: Boolean) -> Unit) {
         ably.channels[which.name].presence.apply {
             enterClient(who.name, "no_data", object : CompletionListener {
                 override fun onSuccess() {

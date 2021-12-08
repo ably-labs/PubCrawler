@@ -37,14 +37,12 @@ class PubActivity : AppCompatActivity() {
         setContentView(R.layout.activity_pub)
         peopleRecyclerView = findViewById(R.id.peopleRecyclerView)
         peopleAdapter = PeopleRecylerAdapter(this::sayHiTo, this::offerDrinkTo)
+        setupObservers()
         intent.extras?.let { bundle ->
             bundle.getString(EXTRA_PUB_JSON)?.let {
                 pub = Gson().fromJson(it, Pub::class.java)
                 supportActionBar?.title = pub.name
-                val realtimePub = PubCrawlerApp.instance().realtimePub
-                supportActionBar?.subtitle = "${realtimePub.numberOfPeopleInPub(pub)} people here"
                 peopleRecyclerView.adapter = peopleAdapter
-                listPeople(pub)
             }
             bundle.getString(EXTRA_PUBGOER_JSON)?.let {
                 pubGoer = Gson().fromJson(it, PubGoer::class.java)
@@ -54,7 +52,7 @@ class PubActivity : AppCompatActivity() {
         findViewById<Button>(R.id.leaveButton).setOnClickListener {
             viewModel.leavePub(pubGoer, pub)
         }
-        setupObservers()
+
     }
 
     private fun setupObservers() {
@@ -130,6 +128,8 @@ class PubActivity : AppCompatActivity() {
         }
 
         viewModel.allPubGoers.observe(this) {
+
+            supportActionBar?.subtitle = "${it.size} people here"
             peopleAdapter.setPubGoers(it)
             peopleAdapter.notifyDataSetChanged()
         }
@@ -194,14 +194,6 @@ class PubActivity : AppCompatActivity() {
         viewModel.leavePub(pubGoer, pub)
     }
 
-    private fun listPeople(pub: Pub) {
-        val realtimePub = PubCrawlerApp.instance().realtimePub
-        val allPresent = realtimePub.allPubGoers(pub)
-        peopleAdapter.setPubGoers(allPresent)
-        peopleAdapter.notifyDataSetChanged()
-    }
-
-
     private fun someoneJustJoined(
         pubGoer: PubGoer
     ) {
@@ -213,7 +205,6 @@ class PubActivity : AppCompatActivity() {
         ).setAction(R.string.say_hi) {
             sayHiTo(pubGoer)
         }.show()
-        listPeople(pub)
     }
 
     private fun someoneJustLeft(
@@ -225,7 +216,6 @@ class PubActivity : AppCompatActivity() {
             "${pubGoer.name} left the pub",
             Snackbar.LENGTH_SHORT
         ).show()
-        listPeople(pub)
     }
 
     companion object {

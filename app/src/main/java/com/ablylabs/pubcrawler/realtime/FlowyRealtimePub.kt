@@ -3,6 +3,8 @@ package com.ablylabs.pubcrawler.realtime
 import android.util.Log
 import com.ablylabs.pubcrawler.pubs.Pub
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -53,14 +55,17 @@ class FlowyPubImpl(private val suspendyPub: SuspendyRealtimePub) : FlowyRealtime
         }
 
     @ExperimentalCoroutinesApi
-    override suspend fun buildPresenceFlow(pub: Pub) = channelFlow {
-        Log.d(TAG, "registering to presence flow")
-        suspendyPub.registerToPresenceUpdates(pub).collect {
-            when (it) {
-                is PubPresenceUpdate.Join -> send(PubPresenceActions.SomeoneJoined(it.pubGoer))
-                is PubPresenceUpdate.Leave -> send(PubPresenceActions.SomeoneLeft(it.pubGoer))
+    override suspend fun buildPresenceFlow(pub: Pub): Flow<PubPresenceActions> = channelFlow {
+        launch {
+            suspendyPub.registerToPresenceUpdates(pub).collect {
+                Log.d(TAG, "buildPresenceFlow received $it")
+                when (it) {
+                    is PubPresenceUpdate.Join -> send(PubPresenceActions.SomeoneJoined(it.pubGoer))
+                    is PubPresenceUpdate.Leave -> send(PubPresenceActions.SomeoneLeft(it.pubGoer))
+                }
             }
         }
+
     }
 
     override suspend fun leave(who: PubGoer, which: Pub): LeaveResult {

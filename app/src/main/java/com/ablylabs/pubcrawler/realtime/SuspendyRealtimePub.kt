@@ -1,14 +1,15 @@
 package com.ablylabs.pubcrawler.realtime
 
+import android.util.Log
 import com.ablylabs.pubcrawler.pubs.Pub
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flow
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+private const val TAG = "SuspendyRealtimePub"
 interface SuspendyRealtimePub {
     suspend fun numberOfPeopleInPub(pub: Pub): Int
     suspend fun join(who: PubGoer, which: Pub): JoinResult
@@ -48,7 +49,7 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
 
     override suspend fun join(who: PubGoer, which: Pub): JoinResult {
         return suspendCoroutine { continuation ->
-            realtimePub.join(who, which) { success ->
+            realtimePub.enter(who, which) { success ->
                 continuation.resume(if (success) JoinResult.Success else JoinResult.Failed("failed"))
             }
         }
@@ -101,18 +102,6 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
         }
     }
 
-    override suspend fun registerToDrinkOffers(pub: Pub, receiver: PubGoer): Flow<PubGoer> {
-        return suspendCoroutine { continuation ->
-            val flow = callbackFlow {
-                realtimePub.registerToDrinkOffers(pub, receiver) { from ->
-                    trySend(from)
-                }
-                awaitClose { cancel() }
-            }
-            continuation.resume(flow)
-        }
-    }
-
     override suspend fun registerToDrinkOfferResponse(
         offered: PubGoer,
         offeree: PubGoer
@@ -157,10 +146,23 @@ class SuspendyPubImpl(private val realtimePub: RealtimePub) : SuspendyRealtimePu
         }
     }
 
+    override suspend fun registerToDrinkOffers(pub: Pub, receiver: PubGoer): Flow<PubGoer> {
+        return suspendCoroutine { continuation ->
+            val flow = callbackFlow {
+                realtimePub.registerToDrinkOffers(pub, receiver) { from ->
+                    trySend(from)
+                }
+                awaitClose { cancel() }
+            }
+            continuation.resume(flow)
+        }
+    }
+
     override suspend fun registerToPresenceUpdates(pub: Pub): Flow<PubPresenceUpdate> {
         return suspendCoroutine { continuation ->
             val flow = callbackFlow {
                 realtimePub.registerToPresenceUpdates(pub) { update ->
+                    Log.d(TAG, "registerToPresenceUpdates: $update")
                     trySend(update)
                 }
                 awaitClose { cancel() }

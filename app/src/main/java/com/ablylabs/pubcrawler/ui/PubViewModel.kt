@@ -75,7 +75,9 @@ class PubViewModel(private val flowyPub: FlowyRealtimePub) : ViewModel() {
             //also refresh users again
             _allPubGoers.value = flowyPub.allPubGoers(which)
             //rebuild action flow
-            buildActionFlowFor(which, who)
+            viewModelScope.launch {
+                buildActionFlowFor(which, who)
+            }
         }
     }
 

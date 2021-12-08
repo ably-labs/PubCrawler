@@ -4,7 +4,7 @@ import com.ablylabs.pubcrawler.pubs.Pub
 
 interface RealtimePub {
     fun numberOfPeopleInPub(pub: Pub): Int
-    fun join(who: PubGoer, which: Pub, joinResult: (success: Boolean) -> Unit)
+    fun enter(who: PubGoer, which: Pub, joinResult: (success: Boolean) -> Unit)
     fun leave(who: PubGoer, which: Pub, leaveResult: (success: Boolean) -> Unit)
     fun sendTextMessage(
         who: PubGoer, toWhom: PubGoer, messageText: String,
