@@ -22,14 +22,15 @@ fun checkName(context: Context, named: (name: String) -> Unit) {
     }
 }
 
-fun showDrinkOfferDialog(context: Context,who:PubGoer, response: (accepted: Boolean) -> Unit) {
+fun showDrinkOfferDialog(context: Context, who: PubGoer, response: (accepted: Boolean) -> Unit) {
     MaterialDialog(context).show {
         this.title(R.string.new_drink_offer)
         this.message(text = "${who.name} wants to offer you a drink. Accept it?")
             .positiveButton(R.string.yes_please)
             .negativeButton(R.string.no_thanks)
             .positiveButton {
-               response(true)
+                response(true)
+                dismiss()
             }
             .negativeButton {
                 response(false)
