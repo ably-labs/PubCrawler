@@ -73,20 +73,34 @@ class PubActivity : AppCompatActivity() {
         }
 
         viewModel.acceptDrinkResult.observe(this) {
+            val contentView = findViewById<View>(android.R.id.content)
             when (it) {
                 AcceptDrinkResult.Success ->
-                    Toast.makeText(this, "Accept received", Toast.LENGTH_LONG).show()
+                    Snackbar.make(
+                        contentView,
+                        "Accepted.", Snackbar.LENGTH_SHORT
+                    ).show()
                 is AcceptDrinkResult.Failed ->
-                    Toast.makeText(this, "Accept not received", Toast.LENGTH_LONG).show()
+                    Snackbar.make(
+                        contentView,
+                        "Unable to accept drink: ${it.reason}", Snackbar.LENGTH_SHORT
+                    ).show()
             }
         }
 
         viewModel.rejectDrinkResult.observe(this) {
+            val contentView = findViewById<View>(android.R.id.content)
             when (it) {
                 RejectDrinkResult.Success ->
-                    Toast.makeText(this, "Accept received", Toast.LENGTH_LONG).show()
+                    Snackbar.make(
+                        contentView,
+                        "Rejected.", Snackbar.LENGTH_SHORT
+                    ).show()
                 is RejectDrinkResult.Failed ->
-                    Toast.makeText(this, "Accept not received", Toast.LENGTH_LONG).show()
+                    Snackbar.make(
+                        contentView,
+                        "Unable to reject drink: ${it.reason}", Snackbar.LENGTH_SHORT
+                    ).show()
             }
         }
 
@@ -154,20 +168,29 @@ class PubActivity : AppCompatActivity() {
     }
 
     private fun someoneSentMessage(who: PubGoer, message: String) {
-        Toast.makeText(this, "${who} : ${message}", Toast.LENGTH_LONG)
-            .show()
+        val contentView = findViewById<View>(android.R.id.content)
+        Snackbar.make(
+            contentView,
+            "${who.name} : ${message}",
+            Snackbar.LENGTH_LONG
+        ).show()
     }
 
     private fun someoneRespondedToDrinkOffer(who: PubGoer, accepted: Boolean) {
+        val contentView = findViewById<View>(android.R.id.content)
         if (accepted) {
-            Toast.makeText(
-                this, "${who.name} :  Cheers " +
-                        "\uD83C\uDF7B", Toast.LENGTH_LONG
+            Snackbar.make(
+                contentView,
+                "${who.name} :  Cheers " +
+                        "\uD83C\uDF7B",
+                Snackbar.LENGTH_LONG
             ).show()
         } else {
-            Toast.makeText(
-                this, "${who.name}: Too drunk, thank you " +
-                        "\uD83E\uDD74", Toast.LENGTH_LONG
+            Snackbar.make(
+                contentView,
+                "${who.name}: Too drunk, thank you " +
+                        "\uD83E\uDD74",
+                Snackbar.LENGTH_LONG
             ).show()
         }
     }
