@@ -1,6 +1,7 @@
 package com.ablylabs.pubcrawler.ui
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.Toast
@@ -196,6 +197,7 @@ class PubActivity : AppCompatActivity() {
     }
 
     private fun someoneOfferedDrink(who: PubGoer) {
+        Log.d(TAG, "someoneOfferedDrink: ${who.name}")
         showDrinkOfferDialog(this, who) { accept ->
             if (accept) {
                 viewModel.acceptDrink(pubGoer, who)

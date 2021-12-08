@@ -5,6 +5,7 @@ import androidx.lifecycle.*
 import androidx.savedstate.SavedStateRegistryOwner
 import com.ablylabs.pubcrawler.pubs.Pub
 import com.ablylabs.pubcrawler.realtime.*
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
@@ -44,6 +45,7 @@ class PubViewModel(private val flowyPub: FlowyRealtimePub) : ViewModel() {
     private val _allPubGoers = MutableLiveData<List<PubGoer>>()
     val allPubGoers: LiveData<List<PubGoer>> = _allPubGoers
 
+    private var actionJob: Job? = null
 
     fun leavePub(who: PubGoer, which: Pub) {
         viewModelScope.launch {
@@ -59,7 +61,7 @@ class PubViewModel(private val flowyPub: FlowyRealtimePub) : ViewModel() {
             _joinResult.value = flowyPub.join(which, who)
             _allPubGoers.value = flowyPub.allPubGoers(which)
             if (_joinResult.value is JoinResult.Success) {
-                launch { buildActionFlowFor(which, who) }
+                actionJob = launch { buildActionFlowFor(which, who) }
                 launch { buildPresenceFlow(which, who) }
             }
         }
@@ -76,7 +78,11 @@ class PubViewModel(private val flowyPub: FlowyRealtimePub) : ViewModel() {
             _allPubGoers.value = flowyPub.allPubGoers(which)
             //rebuild action flow
             viewModelScope.launch {
-                buildActionFlowFor(which, who)
+                //first cancel the first job
+                actionJob?.cancel()
+                actionJob = launch {
+                    buildActionFlowFor(which, who)
+                }
             }
         }
     }
