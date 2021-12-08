@@ -1,10 +1,12 @@
 package com.ablylabs.pubcrawler.ui
 
 import android.graphics.Color
+import android.opengl.Visibility
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.RecyclerView
@@ -31,20 +33,13 @@ class PeopleRecylerAdapter(
         holder.personTextView.text = people[position].name
         checkName(holder.itemView.context) {
             if (people[position].name != it) {
-                holder.itemView.setOnClickListener { onSayHi(people[position]) }
-                holder.itemView.setOnClickListener {
-                    val popup = PopupMenu(holder.itemView.context, holder.itemView)
-                    popup.inflate(R.menu.user_menu)
-                    popup.setOnMenuItemClickListener {
-                        when (it.itemId) {
-                            R.id.say_hi_item -> onSayHi(people[position])
-                            R.id.buy_drink_item -> onBuyDrink(people[position])
-                        }
-                        true
-                    }
-                    popup.show()
-                }
-            }else{
+                holder.sayHiButton.visibility = View.VISIBLE
+                holder.offerDrinkButton.visibility = View.VISIBLE
+                holder.sayHiButton.setOnClickListener { onSayHi(people[position]) }
+                holder.offerDrinkButton.setOnClickListener { onBuyDrink(people[position]) }
+            } else {
+                holder.sayHiButton.visibility = View.GONE
+                holder.offerDrinkButton.visibility = View.GONE
                 holder.personTextView.append(" (you)")
             }
         }
@@ -53,5 +48,7 @@ class PeopleRecylerAdapter(
     override fun getItemCount() = people.size
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val personTextView: TextView = view.findViewById(R.id.personTextView)
+        val sayHiButton: Button = view.findViewById(R.id.sayHiButton)
+        val offerDrinkButton: Button = view.findViewById(R.id.offerDrinkButton)
     }
 }
