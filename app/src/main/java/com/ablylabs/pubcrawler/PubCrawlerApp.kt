@@ -12,11 +12,13 @@ class PubCrawlerApp : Application() {
     //these shouldn't be exposed like this in production app!!
     lateinit var realtimePub: ExpensiveRealtimePub
     lateinit var pubsStore: PubsStore
+    lateinit var ablyRealtime: AblyRealtime
 
     override fun onCreate() {
         super.onCreate()
         instance = this
-        realtimePub = ExpensiveRealtimePub(AblyRealtime(getString(R.string.ably_key)))
+        ablyRealtime = AblyRealtime(getString(R.string.ably_key))
+        realtimePub = ExpensiveRealtimePub(ablyRealtime)
         val inputStream = resources.openRawResource(R.raw.pubs)
         pubsStore = PubsStore(GeolocationTree(), TernarySearchTree(), inputStream)
     }

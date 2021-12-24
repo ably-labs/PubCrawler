@@ -15,7 +15,10 @@ import com.ablylabs.pubcrawler.PubCrawlerApp
 import com.ablylabs.pubcrawler.R
 import com.ablylabs.pubcrawler.pubs.Pub
 import com.ablylabs.pubcrawler.pubs.PubsStore
+import com.ablylabs.pubcrawler.realtime.DefaultRealtimeMap
 import com.ablylabs.pubcrawler.realtime.PubGoer
+import com.ablylabs.pubcrawler.realtime.RealtimeMap
+import com.ablylabs.pubcrawler.realtime.existingUser
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -42,6 +45,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
     private val markers =
         mutableListOf<Marker>() //reuse markers in here if not empty, should be the same count
     private lateinit var selectedPub: Pub
+
+    private val realtimeMap: RealtimeMap = DefaultRealtimeMap(PubCrawlerApp.instance().ablyRealtime)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -58,7 +64,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
                 Intent(this, PubActivity::class.java).apply {
                     val gson = Gson()
                     putExtra(PubActivity.EXTRA_PUB_JSON, gson.toJson(selectedPub))
-                    putExtra(PubActivity.EXTRA_PUBGOER_JSON,gson.toJson(who))
+                    putExtra(PubActivity.EXTRA_PUBGOER_JSON, gson.toJson(who))
                     startActivity(this)
                 }
             }
@@ -92,6 +98,21 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        //join enter pub's realtime map presence
+        val name = existingUser(this)
+        val pubGoer = name?.let { PubGoer(it) }
+            ?: kotlin.run {
+                PubGoer("Unknown")
+            }
+        realtimeMap.enter(pubGoer){success->
+            if (success){
+                Toast.makeText(this,"Successfully joined",Toast.LENGTH_SHORT).show()
+            }else{
+                Toast.makeText(this,"Unable to join",Toast.LENGTH_SHORT).show()
+            }
+        }
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -99,25 +120,29 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         inflater.inflate(R.menu.main_menu, menu)
         return super.onCreateOptionsMenu(menu)
     }
-    val  resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.extras?.getString(SearchPubActivity.SELECTED_PUB_JSON)?.let {pubJson->
-               selectedPub =  Gson().fromJson(pubJson,Pub::class.java)
-                val pubLoc = LatLng(selectedPub.latitude, selectedPub.longitude)
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(pubLoc, DEFAULT_ZOOM))
-                showInfoFor(selectedPub)
+
+    val resultLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.extras?.getString(SearchPubActivity.SELECTED_PUB_JSON)
+                    ?.let { pubJson ->
+                        selectedPub = Gson().fromJson(pubJson, Pub::class.java)
+                        val pubLoc = LatLng(selectedPub.latitude, selectedPub.longitude)
+                        map.animateCamera(CameraUpdateFactory.newLatLngZoom(pubLoc, DEFAULT_ZOOM))
+                        showInfoFor(selectedPub)
+                    }
             }
         }
-    }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.search_item){
+        if (item.itemId == R.id.search_item) {
             val intent = Intent(this, SearchPubActivity::class.java)
             resultLauncher.launch(intent)
             return true
         }
         return super.onOptionsItemSelected(item)
     }
+
     override fun onMapReady(googleMap: GoogleMap?) {
         map = googleMap!!
         map.setOnCameraIdleListener(this)
@@ -150,7 +175,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
                     MarkerOptions()
                         .position(LatLng(it.latitude, it.longitude))
                         .title(it.name)
-                        .icon(BitmapDescriptorFactory.fromBitmap(BitmapFactory.decodeResource(resources,R.drawable.pub_marker)))
+                        .icon(
+                            BitmapDescriptorFactory.fromBitmap(
+                                BitmapFactory.decodeResource(
+                                    resources,
+                                    R.drawable.pub_marker
+                                )
+                            )
+                        )
                 )
                 marker.tag = it
                 markers.add(marker)
@@ -164,7 +196,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
             val now = System.currentTimeMillis()
             val result = pubsStore.findNearbyPubs(it.latitude, it.longitude, 10)
             val later = System.currentTimeMillis()
-            Log.d(TAG, "Nearby computation time ${later-now}ms")
+            Log.d(TAG, "Nearby computation time ${later - now}ms")
             when (result) {
                 is PubsStore.PubsResult.PubsFound -> {
                     result.pubs.apply {
@@ -196,7 +228,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         bottomSheetBehaviour.state = BottomSheetBehavior.STATE_COLLAPSED
     }
 
-    companion object{
+    companion object {
         val DEFAULT_ZOOM = 13f
     }
 
