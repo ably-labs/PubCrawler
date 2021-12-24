@@ -50,7 +50,7 @@ interface RealtimePub {
     )
 
     //all pubgoers in a pub
-    fun allPubGoers(which: Pub): List<PubGoer>
+    fun pubgoersOf(which: Pub): List<PubGoer>
     fun registerToPresenceUpdates(pub: Pub, updated: (update: PubPresenceUpdate) -> Unit)
     fun unRegisterFromPubUpdates(pub: Pub)
 }

@@ -73,7 +73,7 @@ class DefaultRealtimePub :RealtimePub {
         TODO("Not yet implemented")
     }
 
-    override fun allPubGoers(which: Pub): List<PubGoer> {
+    override fun pubgoersOf(which: Pub): List<PubGoer> {
         TODO("Not yet implemented")
     }
 

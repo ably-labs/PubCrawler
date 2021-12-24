@@ -137,7 +137,7 @@ class ExpensiveRealtimePub(private val ably: AblyRealtime) : RealtimePub {
         pub: Pub, receiver: PubGoer, messageName: String,
         messageReceived: (from: PubGoer, message: String) -> Unit
     ) {
-        allPubGoers(pub)
+        pubgoersOf(pub)
             .filter { receiver != it }
             .forEach { from ->
                 val channelId = listOf(from, receiver).hashCode().toString()
@@ -170,7 +170,7 @@ class ExpensiveRealtimePub(private val ably: AblyRealtime) : RealtimePub {
     }
 
     //all pubgoers in a pub
-    override fun allPubGoers(which: Pub): List<PubGoer> {
+    override fun pubgoersOf(which: Pub): List<PubGoer> {
         val messages = ably.channels[which.name].presence.get()
         messages?.let {
             if (it.isNotEmpty()) {
