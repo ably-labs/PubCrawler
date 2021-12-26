@@ -19,10 +19,7 @@ import com.ablylabs.pubcrawler.realtime.DefaultRealtimeMap
 import com.ablylabs.pubcrawler.realtime.PubGoer
 import com.ablylabs.pubcrawler.realtime.RealtimeMap
 import com.ablylabs.pubcrawler.realtime.existingUser
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
@@ -42,10 +39,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
     private lateinit var pubAddressView: TextView
     private lateinit var numberOfPeopleTextView: TextView
     private lateinit var joinButton: Button
-    private val markers =
-        mutableListOf<Marker>() //reuse markers in here if not empty, should be the same count
+    private val pubMarkers =
+        mutableListOf<Marker>() //reuse markers in here if not empty, should be the same coun
     private lateinit var selectedPub: Pub
-
+    private var pubGoer: PubGoer? = null
+    private val pubGoerMarkers = hashMapOf<PubGoer, Marker>()
     private val realtimeMap: RealtimeMap = DefaultRealtimeMap(PubCrawlerApp.instance().ablyRealtime)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,21 +96,43 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+    }
 
-        //join enter pub's realtime map presence
+    private fun enterMapPresence(location: LatLng) {
         val name = existingUser(this)
         val pubGoer = name?.let { PubGoer(it) }
             ?: kotlin.run {
                 PubGoer("Unknown")
             }
-        realtimeMap.enter(pubGoer){success->
-            if (success){
-                Toast.makeText(this,"Successfully joined",Toast.LENGTH_SHORT).show()
-            }else{
-                Toast.makeText(this,"Unable to join",Toast.LENGTH_SHORT).show()
+        realtimeMap.enter(pubGoer, location) { success ->
+            if (success) {
+                this.pubGoer = pubGoer
+                runOnUiThread {
+                    val marker = drawMarkerFor(
+                        pubGoer, position = map.cameraPosition.target,
+                        title = pubGoer.name,
+                        iconResourceId = R.drawable.person_marker
+                    )
+                    marker?.let { pubGoerMarkers[pubGoer] = it }
+                }
+            } else {
+                Toast.makeText(this, "Unable to join", Toast.LENGTH_SHORT).show()
             }
         }
+    }
 
+    private fun updateMapPresence(location: LatLng) {
+        realtimeMap.updatePresenceLocation(this.pubGoer!!, location) { success ->
+            if (success) {
+                runOnUiThread {
+                    pubGoerMarkers[pubGoer]?.let { marker ->
+                        marker.position = location
+                    }
+                }
+            } else {
+                Toast.makeText(this, "Unable to join", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -121,7 +141,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         return super.onCreateOptionsMenu(menu)
     }
 
-    val resultLauncher =
+    private val resultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.extras?.getString(SearchPubActivity.SELECTED_PUB_JSON)
@@ -160,9 +180,33 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         }
     }
 
+    private fun drawMarkerFor(
+        whatFor: Any,
+        position: LatLng,
+        title: String,
+        iconResourceId: Int
+    ): Marker? {
+        Log.d(TAG, "drawMarkerFor: $title")
+        val marker = map.addMarker(
+            MarkerOptions()
+                .position(position)
+                .title(title)
+                .icon(
+                    BitmapDescriptorFactory.fromBitmap(
+                        BitmapFactory.decodeResource(
+                            resources,
+                            iconResourceId
+                        )
+                    )
+                )
+        )
+        marker?.tag = whatFor
+        return marker
+    }
+
     private fun drawPubMarkers(pubs: List<Pub>) {
-        if (markers.isNotEmpty()) {
-            markers.forEachIndexed { index, marker ->
+        if (pubMarkers.isNotEmpty()) {
+            pubMarkers.forEachIndexed { index, marker ->
                 run {
                     marker.position = LatLng(pubs[index].latitude, pubs[index].longitude)
                     marker.title = pubs[index].name
@@ -171,21 +215,14 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
             }
         } else {
             pubs.forEach {
-                val marker = map.addMarker(
-                    MarkerOptions()
-                        .position(LatLng(it.latitude, it.longitude))
-                        .title(it.name)
-                        .icon(
-                            BitmapDescriptorFactory.fromBitmap(
-                                BitmapFactory.decodeResource(
-                                    resources,
-                                    R.drawable.pub_marker
-                                )
-                            )
-                        )
+                val marker = drawMarkerFor(
+                    whatFor = it,
+                    position = LatLng(it.latitude, it.longitude),
+                    title = it.name,
+                    iconResourceId = R.drawable.pub_marker
                 )
-                marker.tag = it
-                markers.add(marker)
+                marker?.let { pubMarkers.add(it) }
+
             }
         }
     }
@@ -205,6 +242,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
                 }
                 is PubsStore.PubsResult.Error -> TODO()
                 PubsStore.PubsResult.NoPubs -> TODO()
+            }
+            //also change current presence of user location
+            if (this.pubGoer != null) {
+                updateMapPresence(it)
+            } else {
+                enterMapPresence(it)
             }
         }
     }
