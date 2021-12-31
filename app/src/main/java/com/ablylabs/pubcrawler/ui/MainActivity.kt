@@ -11,12 +11,14 @@ import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.ablylabs.pubcrawler.PubCrawlerApp
 import com.ablylabs.pubcrawler.R
 import com.ablylabs.pubcrawler.pubs.Pub
 import com.ablylabs.pubcrawler.pubs.PubsStore
 import com.ablylabs.pubcrawler.realtime.DefaultRealtimeMap
 import com.ablylabs.pubcrawler.realtime.PubGoer
+import com.ablylabs.pubcrawler.realtime.PubgoerPresenceUpdate
 import com.ablylabs.pubcrawler.realtime.RealtimeMap
 import com.ablylabs.pubcrawler.realtime.existingUser
 import com.google.android.gms.maps.*
@@ -26,6 +28,7 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.gson.Gson
+import kotlinx.coroutines.launch
 
 private const val TAG = "MainActivity"
 
@@ -43,6 +46,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         mutableListOf<Marker>() //reuse markers in here if not empty, should be the same coun
     private lateinit var selectedPub: Pub
     private var pubGoer: PubGoer? = null
+    private var lastLocation:LatLng? = null
     private val pubGoerMarkers = hashMapOf<PubGoer, Marker>()
     private val realtimeMap: RealtimeMap = DefaultRealtimeMap(PubCrawlerApp.instance().ablyRealtime)
 
@@ -107,14 +111,15 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         realtimeMap.enter(pubGoer, location) { success ->
             if (success) {
                 this.pubGoer = pubGoer
-                runOnUiThread {
+                this.lastLocation = location
+              /*  runOnUiThread {
                     val marker = drawMarkerFor(
                         pubGoer, position = map.cameraPosition.target,
                         title = pubGoer.name,
                         iconResourceId = R.drawable.person_marker
                     )
                     marker?.let { pubGoerMarkers[pubGoer] = it }
-                }
+                }*/
             } else {
                 Toast.makeText(this, "Unable to join", Toast.LENGTH_SHORT).show()
             }
@@ -122,13 +127,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
     }
 
     private fun updateMapPresence(location: LatLng) {
-        realtimeMap.updatePresenceLocation(this.pubGoer!!, location) { success ->
+        realtimeMap.updateLocation(this.pubGoer!!, location) { success ->
             if (success) {
-                runOnUiThread {
+             /*   runOnUiThread {
                     pubGoerMarkers[pubGoer]?.let { marker ->
                         marker.position = location
                     }
-                }
+                }*/
             } else {
                 Toast.makeText(this, "Unable to join", Toast.LENGTH_SHORT).show()
             }
@@ -172,11 +177,65 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
         // Add a marker in Sydney and move the camera
         val bristol = LatLng(51.4684055, -2.7307999)
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(bristol, DEFAULT_ZOOM))
-        progress.apply {
+        progress.run {
             visibility = View.VISIBLE
             //this should move to a bg thread / coroutine later
             pubsStore.loadData()
             visibility = View.GONE
+        }
+        startListeningToMapUpdates()
+        //also get all pubgoers
+        lifecycleScope.launch {
+            val allPubgoers = realtimeMap.allPubGoers()
+            allPubgoers.forEach {pubgoer ->
+                Log.d(TAG, "allPubgoers, pubgoer: ${pubgoer.key.name}")
+                runOnUiThread {
+                    val marker = drawMarkerFor(pubgoer.key,pubgoer.value,pubgoer.key.name,R.drawable.person_marker)
+                    marker?.let {
+                        pubGoerMarkers[pubgoer.key] = it
+                    }
+                }
+            }
+        }
+    }
+
+    private fun startListeningToMapUpdates() {
+        realtimeMap.registerToPresenceUpdates {update ->
+            Log.d(TAG, "startListeningToMapUpdates: $update")
+            runOnUiThread {
+                when(update){
+                    is PubgoerPresenceUpdate.Join -> {
+                        if (pubGoerMarkers[update.pubGoer] == null){
+                            val marker = drawMarkerFor(update.pubGoer,update.location,update.pubGoer.name,R.drawable
+                                .person_marker)
+                            marker?.let { pubGoerMarkers[update.pubGoer] = it }
+                        }
+                    }
+                    is PubgoerPresenceUpdate.Leave -> {
+                       pubGoerMarkers[update.pubGoer]?.let {
+                           it.remove()
+                           pubGoerMarkers.remove(update.pubGoer)
+                           if (pubGoer == update.pubGoer){
+                               pubGoer = null
+                               //enter map presence again
+                               lastLocation?.let {
+                                   enterMapPresence(it)
+                               }
+                           }
+                       }
+                    }
+                    is PubgoerPresenceUpdate.Update -> {
+                        if (pubGoerMarkers[update.pubGoer] == null){
+                            val marker = drawMarkerFor(update.pubGoer,update.location,update.pubGoer.name,R.drawable
+                                .person_marker)
+                            marker?.let { pubGoerMarkers[update.pubGoer] = it }
+                        }else{
+                            pubGoerMarkers[update.pubGoer]?.position = update.location
+                        }
+                    }
+                }
+            }
+
         }
     }
 
@@ -215,14 +274,15 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback,
             }
         } else {
             pubs.forEach {
-                val marker = drawMarkerFor(
-                    whatFor = it,
-                    position = LatLng(it.latitude, it.longitude),
-                    title = it.name,
-                    iconResourceId = R.drawable.pub_marker
-                )
-                marker?.let { pubMarkers.add(it) }
-
+                runOnUiThread {
+                    val marker = drawMarkerFor(
+                        whatFor = it,
+                        position = LatLng(it.latitude, it.longitude),
+                        title = it.name,
+                        iconResourceId = R.drawable.pub_marker
+                    )
+                    marker?.let { pubMarkers.add(it) }
+                }
             }
         }
     }
