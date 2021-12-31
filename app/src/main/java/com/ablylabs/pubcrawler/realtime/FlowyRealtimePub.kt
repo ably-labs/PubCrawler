@@ -3,8 +3,6 @@ package com.ablylabs.pubcrawler.realtime
 import android.util.Log
 import com.ablylabs.pubcrawler.pubs.Pub
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
