@@ -5,8 +5,16 @@ import com.google.gson.Gson
 import io.ably.lib.realtime.AblyRealtime
 import io.ably.lib.realtime.CompletionListener
 import io.ably.lib.types.ErrorInfo
+import io.ably.lib.types.PresenceMessage
+import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+
+sealed class PubgoerPresenceUpdate{
+    data class Join(val pubGoer: PubGoer, val location: LatLng):PubgoerPresenceUpdate()
+    data class Update(val pubGoer: PubGoer, val location: LatLng):PubgoerPresenceUpdate()
+    data class Leave(val pubGoer: PubGoer):PubgoerPresenceUpdate()
+}
 
 interface RealtimeMap {
     //all pubgoers on map
@@ -17,6 +25,8 @@ interface RealtimeMap {
         location: LatLng,
         updateResult: (success: Boolean) -> Unit
     )
+
+    fun registerToPresenceUpdates(updated: (update: PubgoerPresenceUpdate) -> Unit)
 }
 
 const val GLOBAL_CHANNEL_NAME = "global"
@@ -67,6 +77,20 @@ class DefaultRealtimeMap(private val ably: AblyRealtime) : RealtimeMap {
                 }
             })
         }
+    }
+
+    override fun registerToPresenceUpdates( updated: (update: PubgoerPresenceUpdate) -> Unit) {
+        val observedActions = EnumSet.of(PresenceMessage.Action.enter, PresenceMessage.Action.leave)
+        ably.channels[GLOBAL_CHANNEL_NAME].presence.subscribe(observedActions) {
+            when (it.action) {
+                PresenceMessage.Action.enter -> {
+                    val location:LatLng = Gson().fromJson(it.data as String,LatLng::class.java)
+                    updated(PubgoerPresenceUpdate.Join(PubGoer(it.clientId),location))
+                }
+                PresenceMessage.Action.leave -> updated(PubgoerPresenceUpdate.Leave(PubGoer(it.clientId)))
+            }
+        }
+
     }
 
 }
